@@ -1,0 +1,7 @@
+{
+    "name": "Goveelife",
+    "domains": ["sensor"],
+    "homeassistant": "2024.3",
+    "render_readme": false,
+    "iot_class": "Cloud"
+}
