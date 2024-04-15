@@ -1,0 +1,40 @@
+{
+    "config": {
+        "abort": {
+            "single_instance_allowed": "Nur eine Instanz dieser Konfiguration is erlaubt.",
+            "exception": "Es ist ein unbekannter Fehler aufgetreten - Bitte Logdateien prüfen.",
+            "not_supported": "Dieser workflow is leider noch nicht supportet. Bitte warte auf ein Versionsupdate."
+        },
+        "step": {
+            "resource": {
+                "data": {
+					"friendly_name": "Name des GoveeLife accounts (nur Anzeigename)",
+					"api_key": "GoveeLife API key",
+					"scan_interval": "Poll intervall für status updates",
+                    "timeout": "Zeitüberschreitung für cloud anfragen"
+                },
+                "title": "GoveeLife konfigurieren",
+                "description": "Konfiguration"
+            }
+        }        
+    },
+    "options": {
+        "abort": {
+            "single_instance_allowed": "Nur eine Instanz dieser Konfiguration is erlaubt.",
+            "exception": "Es ist ein unbekannter Fehler aufgetreten - Bitte Logdateien prüfen.",
+            "not_supported": "Dieser workflow is leider noch nicht supportet. Bitte warte auf ein Versionsupdate."
+        },
+        "step": {
+            "resource": {
+                "data": {
+					"friendly_name": "Name des GoveeLife accounts (nur Anzeigename)",
+					"api_key": "GoveeLife API key",
+					"scan_interval": "Poll intervall für status updates",
+                    "timeout": "Zeitüberschreitung für cloud anfragen"
+                },
+                "title": "GoveeLife konfigurieren",
+                "description": "Konfiguration"
+            }
+        }
+    }
+}

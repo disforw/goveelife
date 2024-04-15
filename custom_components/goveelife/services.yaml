@@ -1,0 +1,16 @@
+# version: 2021.12.19
+# author: Martin Kraemer, mk.maddin@gmail.com
+# description: YAML configuration file - holding component services
+
+set_poll_interval:
+  name: Set API data poll Interval
+  dscription: Temporary (until next restart) set the time in seconds to poll new data fom api
+  fields:
+    entry_id:
+      name: Entry ID
+      description: The configuration entry ID of the entry to be changed.
+      example: 2c5q107x0n1r44ogswyaoiukla7xepoh 
+    scan_interval:
+      name: ScanInterval
+      description: Poll scan intervall in seconds
+      example: 120

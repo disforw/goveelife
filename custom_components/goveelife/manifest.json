@@ -1,0 +1,11 @@
+{
+  "domain": "goveelife",
+  "name": "Govee Life",
+  "version": "0.0.1",
+  "config_flow": true,
+  "documentation": "https://github.com/mk-maddin/goveelife-HA",
+  "requirements": ["requests>=2.31.0"],
+  "dependencies": ["diagnostics","sensor"],
+  "codeowners": ["@mk-maddin"],
+  "iot_class": "cloud_poll"
+}

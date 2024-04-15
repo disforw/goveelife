@@ -1,0 +1,40 @@
+{
+    "config": {
+        "abort": {
+            "single_instance_allowed": "Only a single configuration instance is allowed.",
+            "exception": "An unknown exception occured during config_flow - check log for details.",
+            "not_supported": "The current workflow is not supported yet. Please wait for version update."
+        },
+        "step": {
+            "resource": {
+                "data": {
+					"friendly_name": "Name of your goveelife account (only for you)",
+					"api_key": "Your goveelife API key",
+					"scan_interval": "Poll interval for status updates",
+					"timeout": "Timeout for connection cloud requests"
+                },
+                "title": "GoveeLife Configuration",
+                "description": "Configuration"
+            }
+        }        
+    },
+    "options": {
+        "abort": {
+            "single_instance_allowed": "Only a single configuration instance is allowed.",
+            "exception": "An unknown exception occured during config_flow - check log for details.",
+            "not_supported": "The current workflow is not supported yet. Please wait for version update."
+        },    
+        "step": {
+            "resource": {
+                "data": {
+					"friendly_name": "Name of your goveelife account (only for you)",
+					"api_key": "Your goveelife API key",
+					"scan_interval": "Poll interval for status updates",
+					"timeout": "Timeout for connection cloud requests"
+                },
+                "title": "GoveeLife Configuration",
+                "description": "Configuration"
+            }
+        } 
+    }
+}
