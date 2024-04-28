@@ -54,8 +54,6 @@ class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
             platform = kwargs.get('platform', 'entities')
             self._api_id = str(entry.data.get(CONF_FRIENDLY_NAME, DEFAULT_NAME))
             self._identifier = (str(device_cfg.get('device')).replace(':','')+'_'+platform).lower()
-            self._entity_id = DOMAIN + '_' + self._identifier
-            self.uniqueid = self._api_id + "_" + self._entity_id 
             
             _LOGGER.debug("%s - %s: __init__", self._api_id, self._identifier)
             self._device_cfg = device_cfg
@@ -69,6 +67,8 @@ class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
             #self._device_class = None
             #self._unit_of_measurement = None
             #self._entity_category = None
+            self._entity_id = (self._name + '_' + platform).lower()
+            self.uniqueid = self._api_id + '_' + DOMAIN + '_' + self._entity_id
 
             self._attributes = {}
             #self._attributes['description'] = self._entity_cfg.get('description', None)
@@ -80,7 +80,6 @@ class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
             #_LOGGER.debug("%s - %s: __init__ kwargs = %s", self._api_id, self._identifier, kwargs)
             self._init_platform_specific(**kwargs)
             self.entity_id = generate_entity_id(platform+'.{}', self._entity_id, hass=hass)
-            self.uniqueid = self._api_id + "_" + self._entity_id 
             _LOGGER.debug("%s - %s: __init__ complete (uid: %s)", self._api_id, self._identifier, self.uniqueid)            
             #ProgrammingDebug(self,True)
         except Exception as e:            
