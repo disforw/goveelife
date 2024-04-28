@@ -128,8 +128,8 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
             _LOGGER.debug("%s - %s: async_turn_on: kwargs = %s", self._api_id, self._identifier, kwargs)
             if not self.is_on:
                 state_capability = {
-                    "type": "devices.capabilities.on_off",
-                    "instance": 'powerSwitch',
+                    "type": self._cap['type'],
+                    "instance": self._cap['instance'],
                     "value": self._state_mapping_set[STATE_ON]
                     }
                 if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
