@@ -140,6 +140,8 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
                                         self._attr_preset_modes_mapping_set[n] = { "workMode" : workOption['value'], "modeValue" : valueOptionOption['value'] }
             elif cap['type'] == 'devices.capabilities.property' and cap['instance'] == 'sensorTemperature':
                 pass #do nothing as this is handled within 'current_temperature' property
+            elif cap['type'] == 'devices.capabilities.toggle' and cap['instance'] == 'oscillationToggle':
+                pass #add on_off switch
             else:
                 _LOGGER.debug("%s - %s: _init_platform_specific: cap unhandled: %s", self._api_id, self._identifier, cap)
 
