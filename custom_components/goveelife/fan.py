@@ -87,7 +87,6 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
         for cap in capabilities:
             _LOGGER.debug("%s - %s: _init_platform_specific: processing cap: %s", self._api_id, self._identifier, cap)
             if cap['type'] == 'devices.capabilities.on_off':
-                self._attr_supported_color_modes.add(ColorMode.ONOFF)
                 for option in cap['parameters']['options']:
                     if option['name'] == 'on':
                         self._state_mapping[option['value']] = STATE_ON
