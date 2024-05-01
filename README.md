@@ -4,5 +4,5 @@ This custom Home Assistant integration is a work in progress that uses the newly
 ## Supported Devices 
 * All lights
 * Heaters
-* Air Filters
+* Air Purifiers
 * Fans
