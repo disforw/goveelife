@@ -55,7 +55,7 @@ class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
             self._api_id = str(entry.data.get(CONF_FRIENDLY_NAME, DEFAULT_NAME))
             self._identifier = (str(device_cfg.get('device')).replace(':','')+'_'+platform).lower()
             
-            _LOGGER.debug("%s - %s: __init__", DOMAIN, self._identifier)
+            _LOGGER.debug("%s - %s: __init__", self._api_id, self._identifier)
             self._device_cfg = device_cfg
             self._entry = entry
             self._entry_id = self._entry.entry_id
@@ -75,10 +75,10 @@ class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
             #self._attributes['description'] = self._entity_cfg.get('description', None)
             self._state = STATE_UNKNOWN
            
-            #_LOGGER.debug("%s - %s: __init__ coordinator", DOMAIN, self._identifier)
+            #_LOGGER.debug("%s - %s: __init__ coordinator", self._api_id, self._identifier)
             super().__init__(coordinator)
            
-            #_LOGGER.debug("%s - %s: __init__ kwargs = %s", DOMAIN, self._identifier, kwargs)
+            #_LOGGER.debug("%s - %s: __init__ kwargs = %s", self._api_id, self._identifier, kwargs)
             self._init_platform_specific(**kwargs)
 
             self.entity_id = generate_entity_id(platform+'.{}', self._entity_id, hass=hass)
@@ -86,7 +86,7 @@ class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
 
             #ProgrammingDebug(self,True)
         except Exception as e:            
-            _LOGGER.error("%s - %s: __init__ failed: %s (%s.%s)", DOMAIN, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
+            _LOGGER.error("%s - %s: __init__ failed: %s (%s.%s)", self._api_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
             return None
 
 
