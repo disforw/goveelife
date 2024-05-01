@@ -67,7 +67,7 @@ class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
             #self._device_class = None
             #self._unit_of_measurement = None
             #self._entity_category = None
-            self._entity_id = (self._name + '_' + platform).lower()
+            self._entity_id = self._name.lower()
             self.uniqueid = self._identifier + '_' + self._entity_id
 
             self._attributes = {}
