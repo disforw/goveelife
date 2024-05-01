@@ -119,7 +119,8 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
            return True
         return False
 
-    async def async_turn_on(self, **kwargs) -> None:
+    #async def async_turn_on(self, **kwargs) -> None:
+    async def async_turn_on(self, speed: str = None, mode: str = None, **kwargs) -> None:
         """Async: Turn entity on"""
         try:
             _LOGGER.debug("%s - %s: async_turn_on", self._api_id, self._identifier)
