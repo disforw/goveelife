@@ -82,6 +82,7 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
     _attr_preset_modes = []
     _attr_preset_modes_mapping = {}
     _attr_preset_modes_mapping_set = {}
+    _attr_supported_features = {}
 
     def _init_platform_specific(self, **kwargs):
         """Platform specific init actions"""
