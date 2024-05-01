@@ -52,7 +52,7 @@ class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
         """Initialize the object."""
         try:
             platform = kwargs.get('platform', 'entities')
-            #self._api_id = str(entry.data.get(CONF_FRIENDLY_NAME, DEFAULT_NAME))
+            self._api_id = str(entry.data.get(CONF_FRIENDLY_NAME, DEFAULT_NAME))
             self._identifier = (str(device_cfg.get('device')).replace(':','')+'_'+platform).lower()
             
             _LOGGER.debug("%s - %s: __init__", DOMAIN, self._identifier)
@@ -67,8 +67,8 @@ class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
             #self._device_class = None
             #self._unit_of_measurement = None
             #self._entity_category = None
-            #self._entity_id = (self._name + '_' + platform).lower()
-            self.uniqueid = self._identifier + '_' + DOMAIN + '_' + self._entity_id
+            self._entity_id = (self._name + '_' + platform).lower()
+            self.uniqueid = self._identifier + '_' + self._entity_id
 
             self._attributes = {}
             #self._attributes['description'] = self._entity_cfg.get('description', None)
