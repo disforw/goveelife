@@ -105,12 +105,8 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                             self._attr_preset_modes += [ workOption['name'] ]
                     if capFieldWork['fieldName'] == 'modeValue':
                         self._attr_supported_features |= FanEntityFeature.SET_SPEED
-                        for valueOption in capFieldValue.get('options', [])
-                            n=str(workOption['name'])+':'+str(valueOptionOption['name'])
-                            v=str(workOption['value'])+':'+str(valueOptionOption['value'])
-                            self._attr_preset_modes += [ n ]
-                            self._attr_preset_modes_mapping[v] = n
-                            self._attr_preset_modes_mapping_set[n] = { "workMode" : workOption['value'], "modeValue" : valueOptionOption['value'] }
+                        for valueOption in capFieldValue['gearMode'].get('options', []):
+                            fan_speeds += [ valueOption['name'] ]
             else:
                 _LOGGER.debug("%s - %s: _init_platform_specific: cap unhandled: %s", self._api_id, self._identifier, cap)
 
