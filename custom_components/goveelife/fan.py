@@ -96,8 +96,30 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                         self._state_mapping_set[STATE_OFF] = option['value']
                     else:
                         _LOGGER.warning("%s - %s: _init_platform_specific: unhandled cap option: %s -> %s", self._api_id, self._identifier, cap['type'], option)
-            elif cap['type'] == 'devices.capabilities.work_mode' and cap['instance'] == 'workMode':
-                pass #impletment a select
+            elif cap['type'] == 'devices.capabilities.work_mode':
+                self._attr_supported_features |= FanEntityFeature.PRESET_MODE
+                for capFieldWork in cap['parameters']['fields']:
+                    if not capFieldWork['fieldName'] == 'workMode':
+                        continue                
+                    for workOption in capFieldWork.get('options', []):
+                        for capFieldValue in cap['parameters']['fields']:
+                            if not capFieldValue['fieldName'] == 'modeValue':
+                                continue
+                            for valueOption in capFieldValue.get('options', []):
+                                if not valueOption['name'] == workOption['name']:
+                                    continue
+                                if valueOption.get('options', None) is None: 
+                                    v=str(workOption['value'])+':'+str(valueOption['defaultValue'])
+                                    self._attr_preset_modes += [ workOption['name'] ]
+                                    self._attr_preset_modes_mapping[v] = workOption['name']
+                                    self._attr_preset_modes_mapping_set[workOption['name']] = { "workMode" : workOption['value'], "modeValue" : valueOption['defaultValue'] }
+                                else:
+                                    for valueOptionOption in valueOption.get('options', []):
+                                        n=str(workOption['name'])+':'+str(valueOptionOption['name'])
+                                        v=str(workOption['value'])+':'+str(valueOptionOption['value'])
+                                        self._attr_preset_modes += [ n ]
+                                        self._attr_preset_modes_mapping[v] = n
+                                        self._attr_preset_modes_mapping_set[n] = { "workMode" : workOption['value'], "modeValue" : valueOptionOption['value'] }
             else:
                 _LOGGER.debug("%s - %s: _init_platform_specific: cap unhandled: %s", self._api_id, self._identifier, cap)
 
