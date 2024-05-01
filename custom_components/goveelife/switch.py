@@ -37,10 +37,10 @@ _LOGGER: Final = logging.getLogger(__name__)
 platform='switch'
 platform_device_types = [ 
     'devices.types.heater:.*on_off:.*',
-    'devices.types.heater:.*toggle:.*',
+    'devices.types.heater:.*toggle:oscillationToggle',
     'devices.types.socket:.*on_off:.*', 
     'devices.types.socket:.*toggle:.*', 
-    'devices.types.light:.*toggle:gradientToggle'
+    'devices.types.light:.*toggle:gradientToggle',
     'devices.types.air_purifier:.*on_off:.*'
 ]
 
