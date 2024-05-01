@@ -13,7 +13,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import DeviceInfo
 
-from homeassistant.components.fan import (FanEntity)
+from homeassistant.components.fan import (FanEntity, FanEntityFeature)
 from homeassistant.const import (
     CONF_DEVICES,
     STATE_ON,
