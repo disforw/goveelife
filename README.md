@@ -2,10 +2,12 @@
 This custom Home Assistant integration is a work in progress that uses the newly released API 2.0 by Govee. Feel free to contribute, all help is appreciated.
 
 ## Supported Devices 
-* All lights
-* Heaters
-* Air Purifiers
-* Fans
+* All lights - Light entity
+* Heaters - Climate, power, oscillation
+* Air Purifiers - Fan entity
+* Fans - Fan entity
+* Ice Maker - power switch
+* Aroma Diffuser - power switch
 
 
 ## How can YOU help?
