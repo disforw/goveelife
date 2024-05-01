@@ -97,10 +97,12 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
                         self._attr_hvac_modes += [ HVACMode.HEAT_COOL ]
                         self._attr_hvac_modes_mapping[option['value']] = HVACMode.HEAT_COOL
                         self._attr_hvac_modes_mapping_set[HVACMode.HEAT_COOL] = option['value']
+                        self._attr_supported_features |= ClimateEntityFeature.TURN_ON
                     elif option['name'] == 'off':
                         self._attr_hvac_modes += [ HVACMode.OFF ]
                         self._attr_hvac_modes_mapping[option['value']] = HVACMode.OFF
                         self._attr_hvac_modes_mapping_set[HVACMode.OFF] = option['value']
+                        self._attr_supported_features |= ClimateEntityFeature.TURN_OFF
                     else:
                         _LOGGER.warning("%s - %s: _init_platform_specific: unknown on_off option: %s", self._api_id, self._identifier, option)
             elif cap['type'] == 'devices.capabilities.temperature_setting' and cap['instance'] == 'targetTemperature':
