@@ -98,8 +98,6 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                         _LOGGER.warning("%s - %s: _init_platform_specific: unhandled cap option: %s -> %s", self._api_id, self._identifier, cap['type'], option)
             elif cap['type'] == 'devices.capabilities.work_mode' and cap['instance'] == 'workMode':
                 pass #impletment a select
-            elif cap['type'] == 'devices.capabilities.toggle' and cap['instance'] == 'gradientToggle':
-                pass #impletmented as switch entity type
             else:
                 _LOGGER.debug("%s - %s: _init_platform_specific: cap unhandled: %s", self._api_id, self._identifier, cap)
 
