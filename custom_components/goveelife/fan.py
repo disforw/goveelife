@@ -167,21 +167,27 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
         except Exception as e:
             _LOGGER.error("%s - %s: async_turn_off failed: %s (%s.%s)", self._api_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
 
+
+    @property
+    def preset_mode(self) -> str | None:
+        """Return the preset_mode of the entity."""
+        #_LOGGER.debug("%s - %s: preset_mode", self._api_id, self._identifier)  
+        value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.work_mode', 'workMode')
+        v=str(value['workMode'])+':'+str(value['modeValue'])
+        v=self._attr_preset_modes_mapping.get(v,STATE_UNKNOWN)
+        if v == STATE_UNKNOWN:
+            _LOGGER.warning("%s - %s: preset_mode: invalid value: %s", self._api_id, self._identifier, value)
+            _LOGGER.debug("%s - %s: preset_mode: valid are: %s", self._api_id, self._identifier, self._attr_preset_modes_mapping)
+        return v 
+
     async def async_set_preset_mode(self, preset_mode: str) -> None:
-        """Set the preset mode of the fan."""
-        try:
-            _LOGGER.debug("%s - %s: async_turn_on", self._api_id, self._identifier)
-            _LOGGER.debug("%s - %s: async_turn_on: kwargs = %s", self._api_id, self._identifier, kwargs)
-            if not self.is_on:
-                state_capability = {
-                    "type": "devices.capabilities.on_off",
-                    "instance": 'powerSwitch',
-                    "value": self._state_mapping_set[STATE_ON]
-                    }
-                if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
-                    self.async_write_ha_state()
-            else:
-                _LOGGER.debug("%s - %s: async_turn_on: device already on", self._api_id, self._identifier)
-            return None
-        except Exception as e:
-            _LOGGER.error("%s - %s: async_turn_on failed: %s (%s.%s)", self._api_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
+        """Set new target preset mode."""
+        #_LOGGER.debug("%s - %s: async_set_preset_mode", self._api_id, self._identifier)
+        state_capability = {
+            "type": "devices.capabilities.work_mode",
+            "instance": "workMode",
+            "name": preset_mode
+            }
+        if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
+            self.async_write_ha_state()
+        return None
