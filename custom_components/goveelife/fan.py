@@ -78,8 +78,6 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
     _state_mapping = {}
     _state_mapping_set = {}
     _attr_preset_modes = []
-    _attr_preset_modes_mapping = {}
-    _attr_preset_modes_mapping_set = {}
 
     def _init_platform_specific(self, **kwargs):
         """Platform specific init actions"""
@@ -104,10 +102,7 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                     if capFieldWork['fieldName'] == 'workMode':
                         self._attr_supported_features |= FanEntityFeature.PRESET_MODE
                         for workOption in capFieldWork.get('options', []):
-                            v=str(workOption['value'])+':'+str(valueOption['defaultValue'])
                             self._attr_preset_modes += [ workOption['name'] ]
-                            self._attr_preset_modes_mapping[v] = workOption['name']
-                            self._attr_preset_modes_mapping_set[workOption['name']] = { "workMode" : workOption['value'], "modeValue" : valueOption['defaultValue'] }
                     if capFieldWork['fieldName'] == 'modeValue':
                         self._attr_supported_features |= FanEntityFeature.SET_SPEED
                         for valueOption in capFieldValue.get('options', [])
@@ -175,3 +170,22 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
             return None            
         except Exception as e:
             _LOGGER.error("%s - %s: async_turn_off failed: %s (%s.%s)", self._api_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
+
+    async def async_set_preset_mode(self, preset_mode: str) -> None:
+        """Set the preset mode of the fan."""
+        try:
+            _LOGGER.debug("%s - %s: async_turn_on", self._api_id, self._identifier)
+            _LOGGER.debug("%s - %s: async_turn_on: kwargs = %s", self._api_id, self._identifier, kwargs)
+            if not self.is_on:
+                state_capability = {
+                    "type": "devices.capabilities.on_off",
+                    "instance": 'powerSwitch',
+                    "value": self._state_mapping_set[STATE_ON]
+                    }
+                if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
+                    self.async_write_ha_state()
+            else:
+                _LOGGER.debug("%s - %s: async_turn_on: device already on", self._api_id, self._identifier)
+            return None
+        except Exception as e:
+            _LOGGER.error("%s - %s: async_turn_on failed: %s (%s.%s)", self._api_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
