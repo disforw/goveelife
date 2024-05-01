@@ -92,6 +92,7 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
         for cap in capabilities:
             #_LOGGER.debug("%s - %s: _init_platform_specific: processing cap: %s", self._api_id, self._identifier, cap)
             if cap['type'] == 'devices.capabilities.on_off':
+                self._attr_supported_features = ClimateEntityFeature.TURN_ON | ClimateEntityFeature.TURN_OFF
                 for option in cap['parameters']['options']:
                     if option['name'] == 'on':
                         self._attr_hvac_modes += [ HVACMode.HEAT_COOL ]
@@ -166,6 +167,11 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
             self.async_write_ha_state()
         return None
 
+    async def async_turn_off(self) -> None:
+        await self.async_set_hvac_mode(HVACMode.OFF)
+    
+    async def async_turn_on(self) -> None:
+        await self.async_set_hvac_mode(HVACMode.HEATING)
 
     @property
     def preset_mode(self) -> str | None:

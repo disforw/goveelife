@@ -36,7 +36,8 @@ from .utils import (
 _LOGGER: Final = logging.getLogger(__name__)
 platform='switch'
 platform_device_types = [ 
-    'devices.types.heater:.*on_off:.*', 
+    'devices.types.heater:.*on_off:.*',
+    'devices.types.heater:.*toggle:oscillationToggle',
     'devices.types.socket:.*on_off:.*', 
     'devices.types.socket:.*toggle:.*', 
     'devices.types.light:.*toggle:gradientToggle'
@@ -91,9 +92,10 @@ class GoveeLifeSwitch(GoveeLifePlatformEntity):
         """Platform specific init actions"""
         _LOGGER.debug("%s - %s: _init_platform_specific", self._api_id, self._identifier)
         self._cap = kwargs.get('cap',None)        
-        self._identifier = self._identifier + '_' + self._cap['instance']
+        #self._identifier = self._identifier + '_' + self._cap['instance']
         self._name = self._name + ' ' + str(self._cap['instance']).capitalize()
         self._entity_id = self._entity_id + '_' + self._cap['instance']
+        self.uniqueid = self._identifier + '_' + self._entity_id
 
         for option in self._cap['parameters']['options']:
             if option['name'] == 'on':
