@@ -67,6 +67,7 @@ class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
             #self._device_class = None
             #self._unit_of_measurement = None
             #self._entity_category = None
+
             self._entity_id = self._name.lower()
             self.uniqueid = self._identifier + '_' + self._entity_id
 
@@ -79,8 +80,10 @@ class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
            
             #_LOGGER.debug("%s - %s: __init__ kwargs = %s", DOMAIN, self._identifier, kwargs)
             self._init_platform_specific(**kwargs)
-            self.entity_id = generate_entity_id(platform+'.{}', self._name, hass=hass)
-            _LOGGER.debug("%s - %s: __init__ complete (uid: %s)", DOMAIN, self._identifier, self.uniqueid)            
+
+            self.entity_id = generate_entity_id(platform+'.{}', self._entity_id, hass=hass)
+            _LOGGER.debug("%s - %s: __init__ complete (uid: %s)", self._api_id, self._identifier, self.uniqueid)            
+
             #ProgrammingDebug(self,True)
         except Exception as e:            
             _LOGGER.error("%s - %s: __init__ failed: %s (%s.%s)", DOMAIN, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
