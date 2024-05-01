@@ -40,7 +40,9 @@ platform_device_types = [
     'devices.types.heater:.*toggle:oscillationToggle',
     'devices.types.socket:.*on_off:.*', 
     'devices.types.socket:.*toggle:.*', 
-    'devices.types.light:.*toggle:gradientToggle'
+    'devices.types.light:.*toggle:gradientToggle',
+    'devices.types.ice_maker:.*on_off:.*',
+    'devices.types.aroma_diffuser:.*on_off:.*'
 ]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
