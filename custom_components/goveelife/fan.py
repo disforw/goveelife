@@ -77,6 +77,9 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
 
     _state_mapping = {}
     _state_mapping_set = {}
+    _attr_preset_modes = []
+    _attr_preset_modes_mapping = {}
+    _attr_preset_modes_mapping_set = {}
 
     def _init_platform_specific(self, **kwargs):
         """Platform specific init actions"""
