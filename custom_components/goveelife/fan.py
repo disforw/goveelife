@@ -197,10 +197,7 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
         state_capability = {
             "type": "devices.capabilities.work_mode",
             "instance": "workMode",
-            "value": {
-                "workMode": 1,
-                "modeValue": 2
-              }
+            "value": preset_mode
             }
         if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
             self.async_write_ha_state()
