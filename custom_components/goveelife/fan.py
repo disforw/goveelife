@@ -108,7 +108,8 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                             wo[workOption['name']] = workOption['value']
                     if capFieldWork['fieldName'] == 'modeValue':
                         for valueOption in capFieldWork.get('options', []):
-                            
+                            if valueOption['name'] == 'gearMode':
+                                for gearOption in capFieldWork.get('options', []):
                             v=str(workOption['value'])+':'+str(workOption['name'])
                             if workOption['name'] == capFieldWork[
                             self._attr_preset_modes += [ workOption['name'] ]
