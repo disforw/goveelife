@@ -105,13 +105,16 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                 for capFieldWork in cap['parameters']['fields']:
                     if capFieldWork['fieldName'] == 'workMode':
                         for workOption in capFieldWork.get('options', []):
-                            #if not custom 
+                            wo[workOption['name']] = workOption['value']
+                    if capFieldWork['fieldName'] == 'modeValue':
+                        for valueOption in capFieldWork.get('options', []):
+                            
                             v=str(workOption['value'])+':'+str(workOption['name'])
                             if workOption['name'] == capFieldWork[
                             self._attr_preset_modes += [ workOption['name'] ]
                             self._attr_preset_modes_mapping[v] = workOption['name']
                             self._attr_preset_modes_mapping_set[workOption['name']] = { "workMode" : workOption['value'], "modeValue" : valueOption['defaultValue'] }
-                    if capFieldWork['fieldName'] == 'modeValue':
+                    
                         for valueOption in capFieldValue['gearMode'].get('options', []):
                         """
                 self._attr_preset_modes = [ "Auto", "Sleep", "High", "Medium", "Low" ]
