@@ -100,19 +100,27 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                     else:
                         _LOGGER.warning("%s - %s: _init_platform_specific: unhandled cap option: %s -> %s", self._api_id, self._identifier, cap['type'], option)
             elif cap['type'] == 'devices.capabilities.work_mode':
+                self._attr_supported_features |= FanEntityFeature.PRESET_MODE
+                """
                 for capFieldWork in cap['parameters']['fields']:
                     if capFieldWork['fieldName'] == 'workMode':
-                        self._attr_supported_features |= FanEntityFeature.PRESET_MODE
                         for workOption in capFieldWork.get('options', []):
+                            #if not custom 
                             v=str(workOption['value'])+':'+str(workOption['name'])
+                            if workOption['name'] == capFieldWork[
                             self._attr_preset_modes += [ workOption['name'] ]
                             self._attr_preset_modes_mapping[v] = workOption['name']
                             self._attr_preset_modes_mapping_set[workOption['name']] = { "workMode" : workOption['value'], "modeValue" : valueOption['defaultValue'] }
                     if capFieldWork['fieldName'] == 'modeValue':
-                        self._attr_supported_features |= FanEntityFeature.SET_SPEED
                         for valueOption in capFieldValue['gearMode'].get('options', []):
-                            fan_speeds += [ valueOption['name'] ]
-
+                        """
+                self._attr_preset_modes = [ "Auto", "Sleep", "High", "Medium", "Low" ]
+                #self._attr_preset_modes_mapping[v] = workOption['name']
+                self._attr_preset_modes_mapping_set["Auto"] = { "workMode" : 3, "modeValue" : 0 }
+                self._attr_preset_modes_mapping_set["Sleep"] = { "workMode" : 5, "modeValue" : 0 }
+                self._attr_preset_modes_mapping_set["Low"] = { "workMode" : 1, "modeValue" : 1 }
+                self._attr_preset_modes_mapping_set["Medium"] = { "workMode" : 1, "modeValue" : 2 }
+                self._attr_preset_modes_mapping_set["High"] = { "workMode" : 1, "modeValue" : 3 }
             else:
                 _LOGGER.debug("%s - %s: _init_platform_specific: cap unhandled: %s", self._api_id, self._identifier, cap)
 
@@ -134,11 +142,9 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
            return True
         return False
 
-    #async def async_turn_on(self, **kwargs) -> None:
     async def async_turn_on(self, speed: str = None, mode: str = None, **kwargs) -> None:
         """Async: Turn entity on"""
         try:
-            _LOGGER.debug("%s - %s: async_turn_on", self._api_id, self._identifier)
             _LOGGER.debug("%s - %s: async_turn_on: kwargs = %s", self._api_id, self._identifier, kwargs)
             if not self.is_on:
                 state_capability = {
@@ -157,7 +163,6 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
     async def async_turn_off(self, **kwargs) -> None:
         """Async: Turn entity off"""
         try:
-            _LOGGER.debug("%s - %s: async_turn_off", self._api_id, self._identifier)
             _LOGGER.debug("%s - %s: async_turn_off: kwargs = %s", self._api_id, self._identifier, kwargs)
             if self.is_on:
                 state_capability = {
@@ -192,7 +197,10 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
         state_capability = {
             "type": "devices.capabilities.work_mode",
             "instance": "workMode",
-            "name": preset_mode
+            "value": {
+                "workMode": 1,
+                "modeValue": 2
+              }
             }
         if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
             self.async_write_ha_state()
