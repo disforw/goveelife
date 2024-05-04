@@ -197,7 +197,7 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
         v="Low"
         #v=str("workMode" : value['workMode'], "modeValue" : value['modeValue'])
         #v=list(self._attr_preset_modes_mapping_set.keys())[list(self._attr_preset_modes_mapping_set.values()).index(112)]
-        v=self._attr_preset_modes_mapping(v,STATE_UNKNOWN)
+        v=self._attr_preset_modes(v,STATE_UNKNOWN)
         if v == STATE_UNKNOWN:
             _LOGGER.warning("%s - %s: preset_mode: invalid value: %s", self._api_id, self._identifier, value)
             _LOGGER.debug("%s - %s: preset_mode: valid are: %s", self._api_id, self._identifier, self._attr_preset_modes_mapping)
