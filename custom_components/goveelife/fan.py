@@ -104,13 +104,14 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                 for capFieldWork in cap['parameters']['fields']:
                     if capFieldWork['fieldName'] == 'workMode':
                         for workOption in capFieldWork.get('options', []):
-                            wo[workOption['name']] = workOption['value']
+                            self._attr_preset_modes_mapping[workOption['name']] = workOption['value']
                     if capFieldWork['fieldName'] == 'modeValue':
                         for valueOption in capFieldWork.get('options', []):
                             if valueOption['name'] == 'gearMode':
                                 for gearOption in valueOption.get('options', []):
-                                    self._attr_preset_modes += [ gearOptions['name'] ]
-                                    self._attr_preset_modes_mapping_set[gearOption['name']] += { "workMode" : wo[gearOption['name']], "modeValue" : gearOption['value'] }
+                                    self._attr_preset_modes.append(gearOption['name'])
+                                    self._attr_preset_modes_mapping_set[gearOption['name']] = { "workMode" : self._attr_preset_modes_mapping[gearOption['name']], "modeValue" : gearOption['value'] }
+                                    _LOGGER.debug("adding preset mode of %s: %s", gearOption['name'], self._attr_preset_modes_mapping_set[gearOption['name']])
 
                 """
                             v=str(workOption['value'])+':'+str(workOption['name'])
@@ -192,12 +193,16 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
         """Return the preset_mode of the entity."""
         #_LOGGER.debug("%s - %s: preset_mode", self._api_id, self._identifier)  
         value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.work_mode', 'workMode')
-        v=str(value['workMode'])+':'+str(value['modeValue'])
-        v=self._attr_preset_modes_mapping.get(v,STATE_UNKNOWN)
+        #v=str(value['workMode'])+':'+str(value['modeValue'])
+        v="Low"
+        #v=str("workMode" : value['workMode'], "modeValue" : value['modeValue'])
+        #v=list(self._attr_preset_modes_mapping_set.keys())[list(self._attr_preset_modes_mapping_set.values()).index(112)]
+        v=self._attr_preset_modes_mapping(v,STATE_UNKNOWN)
         if v == STATE_UNKNOWN:
             _LOGGER.warning("%s - %s: preset_mode: invalid value: %s", self._api_id, self._identifier, value)
             _LOGGER.debug("%s - %s: preset_mode: valid are: %s", self._api_id, self._identifier, self._attr_preset_modes_mapping)
         return v 
+
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set new target preset mode."""
