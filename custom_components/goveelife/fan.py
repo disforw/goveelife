@@ -100,18 +100,22 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                     else:
                         _LOGGER.warning("%s - %s: _init_platform_specific: unhandled cap option: %s -> %s", self._api_id, self._identifier, cap['type'], option)
             elif cap['type'] == 'devices.capabilities.work_mode':
-                self._attr_supported_features |= FanEntityFeature.PRESET_MODE
+        	self._attr_supported_features |= FanEntityFeature.PRESET_MODE
                 for capFieldWork in cap['parameters']['fields']:
                     if capFieldWork['fieldName'] == 'workMode':
                         for workOption in capFieldWork.get('options', []):
                             self._attr_preset_modes_mapping[workOption['name']] = workOption['value']
                     if capFieldWork['fieldName'] == 'modeValue':
-                        for valueOption in capFieldWork.get('options', []):
+                	for valueOption in capFieldWork.get('options', []):
                             if valueOption['name'] == 'gearMode':
                                 for gearOption in valueOption.get('options', []):
                                     self._attr_preset_modes.append(gearOption['name'])
                                     self._attr_preset_modes_mapping_set[gearOption['name']] = { "workMode" : self._attr_preset_modes_mapping[valueOption['name']], "modeValue" : gearOption['value'] }
                                     _LOGGER.debug("Adding PRESET mode of %s: %s", gearOption['name'], self._attr_preset_modes_mapping_set[gearOption['name']])
+                            elif not valueOption['name'] == 'Custom':
+                                self._attr_preset_modes.append(valueOption['name'])
+                                self._attr_preset_modes_mapping_set[valueOption['name']] = { "workMode" : self._attr_preset_modes_mapping[valueOption['name']], "modeValue" : valueOption['value'] }
+
 
             else:
                 _LOGGER.debug("%s - %s: _init_platform_specific: cap unhandled: %s", self._api_id, self._identifier, cap)
@@ -176,11 +180,8 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
         """Return the preset_mode of the entity."""
         #_LOGGER.debug("%s - %s: preset_mode", self._api_id, self._identifier)  
         value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.work_mode', 'workMode')
-        #v=str(value['workMode'])+':'+str(value['modeValue'])
-        #v="Low"
         v = { "workMode" : value['workMode'], "modeValue" : value['modeValue'] }
-        preset = list(self._attr_preset_modes_mapping_set.keys())[list(self._attr_preset_modes_mapping_set.values()).index(v)]
-        #v=self._attr_preset_modes(v,STATE_UNKNOWN)
+        #preset = list(self._attr_preset_modes_mapping_set.keys())[list(self._attr_preset_modes_mapping_set.values()).index(v)]
         key_list = [key for key, val in self._attr_preset_modes_mapping_set.items() if val == v]
 
         if len(key_list) > 0:
