@@ -181,10 +181,14 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
         v = { "workMode" : value['workMode'], "modeValue" : value['modeValue'] }
         preset = list(self._attr_preset_modes_mapping_set.keys())[list(self._attr_preset_modes_mapping_set.values()).index(v)]
         #v=self._attr_preset_modes(v,STATE_UNKNOWN)
-        if v == STATE_UNKNOWN:
-            _LOGGER.warning("%s - %s: preset_mode: invalid value: %s", self._api_id, self._identifier, value)
-            _LOGGER.debug("%s - %s: preset_mode: valid are: %s", self._api_id, self._identifier, self._attr_preset_modes_mapping)
-        return v 
+        key_list = [key for key, val in self._attr_preset_modes_mapping_set.items() if val == v]
+
+        if len(key_list) > 0:
+	        return key_list[0]
+        else:
+            _LOGGER.warning("%s - %s: preset_mode: invalid value: %s", self._api_id, self._identifier, v)
+            _LOGGER.debug("%s - %s: preset_mode: valid are: %s", self._api_id, self._identifier, self._attr_preset_modes_mapping_set)
+            return STATE_UNKNOWN
 
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
