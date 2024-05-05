@@ -85,7 +85,7 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
         """Platform specific init actions"""
         _LOGGER.debug("%s - %s: _init_platform_specific", self._api_id, self._identifier)
         capabilities = self._device_cfg.get('capabilities',[])
- 
+
         _LOGGER.debug("%s - %s: _init_platform_specific: processing devices request capabilities", self._api_id, self._identifier)
         for cap in capabilities:
             _LOGGER.debug("%s - %s: _init_platform_specific: processing cap: %s", self._api_id, self._identifier, cap)
@@ -131,7 +131,7 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
     def is_on(self) -> bool:
         """Return true if entity is on."""
         if self.state == STATE_ON: 
-           return True
+        	return True
         return False
 
     async def async_turn_on(self, speed: str = None, mode: str = None, **kwargs) -> None:
