@@ -101,7 +101,7 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                         _LOGGER.warning("%s - %s: _init_platform_specific: unhandled cap option: %s -> %s", self._api_id, self._identifier, cap['type'], option)
             elif cap['type'] == 'devices.capabilities.work_mode':
         	self._attr_supported_features |= FanEntityFeature.PRESET_MODE
-                for capFieldWork in cap['parameters']['fields']:
+		for capFieldWork in cap['parameters']['fields']:
                     if capFieldWork['fieldName'] == 'workMode':
                         for workOption in capFieldWork.get('options', []):
                             self._attr_preset_modes_mapping[workOption['name']] = workOption['value']
