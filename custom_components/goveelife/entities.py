@@ -74,10 +74,10 @@ class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
             self._attributes = {}
             #self._attributes['description'] = self._entity_cfg.get('description', None)
             self._state = STATE_UNKNOWN
-           
-            #_LOGGER.debug("%s - %s: __init__ coordinator", self._api_id, self._identifier)
+
+
             super().__init__(coordinator)
-           
+
             #_LOGGER.debug("%s - %s: __init__ kwargs = %s", self._api_id, self._identifier, kwargs)
             self._init_platform_specific(**kwargs)
             self.entity_id = generate_entity_id(platform+'.{}', self._entity_id, hass=hass)
@@ -165,8 +165,8 @@ class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
             #_LOGGER.debug("%s - %s: available result: %s", self._api_id, self._identifier, value) 
             return value
         except Exception as e:
-           _LOGGER.error("%s - available: Failed: %s (%s.%s)", self._entry_id, str(e), e.__class__.__module__, type(e).__name__)
-           return False
+            _LOGGER.error("%s - available: Failed: %s (%s.%s)", self._entry_id, str(e), e.__class__.__module__, type(e).__name__)
+            return False
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -210,8 +210,8 @@ class GoveeAPIUpdateCoordinator(DataUpdateCoordinator):
             async with async_timeout.timeout(entry_data[CONF_PARAMS][CONF_TIMEOUT]):
                 r = await async_GoveeAPI_GetDeviceState(self.hass, self._entry_id, self._device_cfg, True)
         except Exception as e:
-           _LOGGER.error("%s - GoveeAPIUpdateCoordinator: _async_update_data Failed: %s (%s.%s)", self._entry_id, str(e), e.__class__.__module__, type(e).__name__)
-           return False
+            _LOGGER.error("%s - GoveeAPIUpdateCoordinator: _async_update_data Failed: %s (%s.%s)", self._entry_id, str(e), e.__class__.__module__, type(e).__name__)
+            return False
 
         try:
             s = entry_data.get(CONF_SCAN_INTERVAL, None)            
@@ -225,7 +225,7 @@ class GoveeAPIUpdateCoordinator(DataUpdateCoordinator):
                 if not s == self.update_interval:
                     self.update_interval = s
         except Exception as e:
-           _LOGGER.warning("%s - GoveeAPIUpdateCoordinator: _async_update_data update intervall change failed: %s (%s.%s)", self._entry_id, str(e), e.__class__.__module__, type(e).__name__)
+            _LOGGER.warning("%s - GoveeAPIUpdateCoordinator: _async_update_data update intervall change failed: %s (%s.%s)", self._entry_id, str(e), e.__class__.__module__, type(e).__name__)
 
         if r == 429:
             #raise ConfigEntryAuthFailed from err
