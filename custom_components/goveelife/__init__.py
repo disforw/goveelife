@@ -38,7 +38,7 @@ _LOGGER: Final = logging.getLogger(__name__)
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up cloud resource from the config entry."""
     _LOGGER.debug("Setting up config entry: %s", entry.entry_id)
-  
+
     try:
         _LOGGER.debug("%s - async_setup_entry: Creating data store: %s.%s ", entry.entry_id, DOMAIN, entry.entry_id)
         hass.data.setdefault(DOMAIN, {})
@@ -50,7 +50,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except Exception as e:
         _LOGGER.error("%s - async_setup_entry: Creating data store failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return False
- 
+
     try:
         _LOGGER.debug("%s - async_setup_entry: Receiving cloud devices..", entry.entry_id)
         api_devices = await async_GoveeAPI_GETRequest(hass, entry.entry_id, 'user/devices')
@@ -74,7 +74,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except Exception as e:
         _LOGGER.error("%s - async_setup_entry: Creating update coordinators failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return False 
-       
+
     try:
         _LOGGER.debug("%s - async_setup_entry: Register option updates listener: %s ", entry.entry_id, FUNC_OPTION_UPDATES)
         entry_data[FUNC_OPTION_UPDATES] = entry.add_update_listener(options_update_listener) 
