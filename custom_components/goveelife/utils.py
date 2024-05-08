@@ -100,7 +100,7 @@ async def async_GoveeAPI_GETRequest(hass: HomeAssistant, entry_id: str, path: st
         headers={"Content-Type":"application/json",CLOUD_API_HEADER_KEY: str(entry_data[CONF_PARAMS].get(CONF_API_KEY, None))}
         timeout=entry_data[CONF_PARAMS].get(CONF_TIMEOUT, None)
         url=CLOUD_API_URL_OPENAPI + '/' + path.strip("/")
-  
+
         #_LOGGER.debug("%s - async_GoveeAPI_GETRequest: extecute GET request"
         await async_GooveAPI_CountRequests(hass, entry_id)
         r = await hass.async_add_executor_job(lambda: requests.get(url,headers=headers,timeout=timeout))        
@@ -134,7 +134,7 @@ async def async_GoveeAPI_POSTRequest(hass: HomeAssistant, entry_id: str, path: s
         _LOGGER.debug("%s - async_GoveeAPI_POSTRequest: data = %s", entry_id, data)
         data = json.loads(data)
         url=CLOUD_API_URL_OPENAPI + '/' + path.strip("/")
-  
+
         #_LOGGER.debug("%s - async_GoveeAPI_POSTRequest: extecute POST request"
         await async_GooveAPI_CountRequests(hass, entry_id)
         r = await hass.async_add_executor_job(lambda: requests.post(url,json=data,headers=headers,timeout=timeout))        
@@ -160,7 +160,7 @@ async def async_GoveeAPI_POSTRequest(hass: HomeAssistant, entry_id: str, path: s
     except Exception as e:
         _LOGGER.error("%s - async_GoveeAPI_POSTRequest: Failed: %s (%s.%s)", entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return None
-              
+
 async def async_GoveeAPI_GetDeviceState(hass: HomeAssistant, entry_id: str, device_cfg, return_status_code=False) -> None:
     """Asnyc: Request and save state of device via GooveAPI"""
     try:
@@ -261,7 +261,7 @@ def GoveeAPI_GetCachedStateValue(hass: HomeAssistant, entry_id: str, device_id, 
     except Exception as e:
         _LOGGER.error("%s - async_GoveeAPI_GetCachedStateValue: Failed: %s (%s.%s)", entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return None
- 
+
     try:
         #_LOGGER.debug("%s - async_GoveeAPI_GetCachedStateValue: getting value: %s - %s", entry_id, value_type, value_instance)  
         for cap in capabilities:
