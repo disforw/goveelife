@@ -88,7 +88,7 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
         """Platform specific init actions"""
         _LOGGER.debug("%s - %s: _init_platform_specific", self._api_id, self._identifier)
         capabilities = self._device_cfg.get('capabilities',[])
- 
+
         _LOGGER.debug("%s - %s: _init_platform_specific: processing devices request capabilities", self._api_id, self._identifier)
         for cap in capabilities:
             #_LOGGER.debug("%s - %s: _init_platform_specific: processing cap: %s", self._api_id, self._identifier, cap)
