@@ -61,7 +61,7 @@ class ConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         except Exception as e:
             _LOGGER.error("%s - ConfigFlowHandler: async_step_resource failed: %s (%s.%s)", DOMAIN, str(e), e.__class__.__module__, type(e).__name__)
             return self.async_abort(reason="exception") 
-               
+
     async def async_step_final(self, user_input: Optional[Dict[str, Any]] = None):
         _LOGGER.debug("%s - ConfigFlowHandler: async_step_final: %s", DOMAIN, user_input)
         title=self.data.get(CONF_FRIENDLY_NAME, DEFAULT_NAME)
@@ -80,7 +80,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         """Initialize options flow."""
         _LOGGER.debug("%s - OptionsFlowHandler: __init__: %s", DOMAIN, config_entry)
         self.config_entry = config_entry      
-                 
+
     async def async_step_init(self, user_input: Dict[str, Any] = None) -> Dict[str, Any]:
         """Manage the options for the custom component."""
         _LOGGER.debug("%s - OptionsFlowHandler: async_step_init: %s", DOMAIN, user_input)
