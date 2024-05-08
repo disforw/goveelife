@@ -123,7 +123,7 @@ class GoveeLifeSwitch(GoveeLifePlatformEntity):
     def is_on(self) -> bool:
         """Return true if entity is on."""
         if self.state == STATE_ON: 
-           return True
+            return True
         return False
 
 
