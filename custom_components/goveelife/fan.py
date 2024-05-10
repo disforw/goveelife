@@ -100,21 +100,21 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                     else:
                         _LOGGER.warning("%s - %s: _init_platform_specific: unhandled cap option: %s -> %s", self._api_id, self._identifier, cap['type'], option)
             elif cap['type'] == 'devices.capabilities.work_mode':
-		    self._attr_supported_features |= FanEntityFeature.PRESET_MODE
-		    for capFieldWork in cap['parameters']['fields']:
-			    if capFieldWork['fieldName'] == 'workMode':
-				    for workOption in capFieldWork.get('options', []):
-					    self._attr_preset_modes_mapping[workOption['name']] = workOption['value']
-			    elif capFieldWork['fieldName'] == 'modeValue':
-				    for valueOption in capFieldWork.get('options', []):
-					    if valueOption['name'] == 'gearMode':
-						    for gearOption in valueOption.get('options', []):
-							    self._attr_preset_modes.append(gearOption['name'])
-							    self._attr_preset_modes_mapping_set[gearOption['name']] = { "workMode" : self._attr_preset_modes_mapping[valueOption['name']], "modeValue" : gearOption['value'] }
-							    _LOGGER.debug("Adding PRESET mode of %s: %s", gearOption['name'], self._attr_preset_modes_mapping_set[gearOption['name']])
-					    elif not valueOption['name'] == 'Custom':
-						    self._attr_preset_modes.append(valueOption['name'])
-						    self._attr_preset_modes_mapping_set[valueOption['name']] = { "workMode" : self._attr_preset_modes_mapping[valueOption['name']], "modeValue" : valueOption['value'] }
+                self._attr_supported_features |= FanEntityFeature.PRESET_MODE
+                for capFieldWork in cap['parameters']['fields']:
+                    if capFieldWork['fieldName'] == 'workMode':
+                        for workOption in capFieldWork.get('options', []):
+                            self._attr_preset_modes_mapping[workOption['name']] = workOption['value']
+                    elif capFieldWork['fieldName'] == 'modeValue':
+                        for valueOption in capFieldWork.get('options', []):
+                            if valueOption['name'] == 'gearMode':
+                                for gearOption in valueOption.get('options', []):
+                                    self._attr_preset_modes.append(gearOption['name'])
+                                    self._attr_preset_modes_mapping_set[gearOption['name']] = { "workMode" : self._attr_preset_modes_mapping[valueOption['name']], "modeValue" : gearOption['value'] }
+                                    _LOGGER.debug("Adding PRESET mode of %s: %s", gearOption['name'], self._attr_preset_modes_mapping_set[gearOption['name']])
+                            elif not valueOption['name'] == 'Custom':
+                                self._attr_preset_modes.append(valueOption['name'])
+                                self._attr_preset_modes_mapping_set[valueOption['name']] = { "workMode" : self._attr_preset_modes_mapping[valueOption['name']], "modeValue" : valueOption['value'] }
 
             else:
                 _LOGGER.debug("%s - %s: _init_platform_specific: cap unhandled: %s", self._api_id, self._identifier, cap)
@@ -132,10 +132,10 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
 
     @property
     def is_on(self) -> bool:
-	"""Return true if entity is on."""
-	if self.state == STATE_ON:
-		return True
-	return False
+        """Return true if entity is on."""
+        if self.state == STATE_ON:
+            return True
+        return False
 
     async def async_turn_on(self, speed: str = None, mode: str = None, **kwargs) -> None:
         """Async: Turn entity on"""
@@ -184,7 +184,7 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
         key_list = [key for key, val in self._attr_preset_modes_mapping_set.items() if val == v]
 
         if len(key_list) > 0:
-		return key_list[0]
+            return key_list[0]
         else:
             _LOGGER.warning("%s - %s: preset_mode: invalid value: %s", self._api_id, self._identifier, v)
             _LOGGER.debug("%s - %s: preset_mode: valid are: %s", self._api_id, self._identifier, self._attr_preset_modes_mapping_set)
