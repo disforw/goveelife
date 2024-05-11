@@ -1,7 +1,7 @@
 {
   "domain": "goveelife",
   "name": "Govee Life",
-  "version": "0.0.1",
+  "version": "0.2.0",
   "config_flow": true,
   "documentation": "https://github.com/mk-maddin/goveelife-HA",
   "requirements": ["requests>=2.31.0"],
