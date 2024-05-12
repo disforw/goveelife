@@ -20,7 +20,6 @@ from .const import (
     DEFAULT_POLL_INTERVAL,
     DEFAULT_TIMEOUT,
     DOMAIN,
-    CONF_CLIMATE_UNIT,  #CLIMATE-UNIT
 )
 
 _LOGGER: Final = logging.getLogger(__name__)
@@ -30,7 +29,6 @@ GOVEELIFE_SCHEMA: Final = vol.Schema({
     vol.Required(CONF_API_KEY, default=None): cv.string,
     vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_POLL_INTERVAL): cv.positive_int,
     vol.Optional(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): cv.positive_int,
-    vol.Optional(CONF_CLIMATE_UNIT, default="on"): cv.bool,  #CLIMATE-UNIT
 })
 
 async def async_get_OPTIONS_GOVEELIFE_SCHEMA(current_data):
@@ -43,7 +41,6 @@ async def async_get_OPTIONS_GOVEELIFE_SCHEMA(current_data):
             vol.Required(CONF_API_KEY, default=current_data.get(CONF_API_KEY)): cv.string,
             vol.Optional(CONF_SCAN_INTERVAL, default=current_data.get(CONF_SCAN_INTERVAL,DEFAULT_POLL_INTERVAL)): cv.positive_int,
             vol.Optional(CONF_TIMEOUT, default=current_data.get(CONF_TIMEOUT,DEFAULT_TIMEOUT)): cv.positive_int,
-            vol.Optional(CONF_CLIMATE_UNIT, default="on"): cv.bool,  #CLIMATE-UNIT
         })
         await asyncio.sleep(0)
         return OPTIONS_GOVEELIFE_SCHEMA
