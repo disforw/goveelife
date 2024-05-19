@@ -44,7 +44,7 @@ platform_device_types = [
     'devices.types.ice_maker:.*on_off:.*',
     'devices.types.aroma_diffuser:.*on_off:.*',
     'devices.types.humidifier:.*on_off:.*',
-    'devices.types.humidifier:.*toggle:nightlightToggle',
+    'devices.types.humidifier:.*toggle:nightlightToggle'
 
 ]
 
