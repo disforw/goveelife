@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Final
 import logging
 import asyncio
-import copy
+import re
 
 from homeassistant.core import (
     HomeAssistant,

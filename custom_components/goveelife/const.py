@@ -5,7 +5,7 @@ from typing import Final
 
 DOMAIN: Final = 'goveelife'
 FUNC_OPTION_UPDATES: Final = 'options_update_listener'
-SUPPORTED_PLATFORMS: Final = [ "climate","switch","light","fan" ]
+SUPPORTED_PLATFORMS: Final = [ "climate","switch","light","fan","sensor" ]
 STATE_DEBUG_FILENAME: Final = '/_diagnostics.json'
 
 
