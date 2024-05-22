@@ -83,7 +83,7 @@ class GoveeLifeHumidifier(HumidifierEntity, GoveeLifePlatformEntity):
 
     _state_mapping = {}
     _state_mapping_set = {}
-    _attr_preset_modes = []
+    _attr_available_modes = []
     _attr_preset_modes_mapping = {}
     _attr_preset_modes_mapping_set = {}
     _attr_device_class = HumidifierDeviceClass.HUMIDIFIER
@@ -107,21 +107,24 @@ class GoveeLifeHumidifier(HumidifierEntity, GoveeLifePlatformEntity):
                     else:
                         _LOGGER.warning("%s - %s: _init_platform_specific: unhandled cap option: %s -> %s", self._api_id, self._identifier, cap['type'], option)
             elif cap['type'] == 'devices.capabilities.work_mode':
-                self._attr_supported_features |= HumidifierEntityFeature.PRESET_MODE
+                self._attr_supported_features |= HumidifierEntityFeature.MODES
                 for capFieldWork in cap['parameters']['fields']:
                     if capFieldWork['fieldName'] == 'workMode':
                         for workOption in capFieldWork.get('options', []):
                             self._attr_preset_modes_mapping[workOption['name']] = workOption['value']
                     elif capFieldWork['fieldName'] == 'modeValue':
                         for valueOption in capFieldWork.get('options', []):
-                            if valueOption['name'] == 'gearMode':
+                            if valueOption['name'] == 'Manual':
                                 for gearOption in valueOption.get('options', []):
-                                    self._attr_preset_modes.append(gearOption['name'])
+                                    self._attr_available_modes.append(gearOption['name'])
                                     self._attr_preset_modes_mapping_set[gearOption['name']] = { "workMode" : self._attr_preset_modes_mapping[valueOption['name']], "modeValue" : gearOption['value'] }
                                     _LOGGER.debug("Adding PRESET mode of %s: %s", gearOption['name'], self._attr_preset_modes_mapping_set[gearOption['name']])
                             elif not valueOption['name'] == 'Custom':
-                                self._attr_preset_modes.append(valueOption['name'])
+                                self._attr_available_modes.append(valueOption['name'])
                                 self._attr_preset_modes_mapping_set[valueOption['name']] = { "workMode" : self._attr_preset_modes_mapping[valueOption['name']], "modeValue" : valueOption['value'] }
+            elif cap['type'] == 'devices.capabilities.range' and cap['instance'] == 'humidity':
+                self._attr_min_humidity = cap['parameters']['range']['min']
+                self._attr_max_humidity = cap['parameters']['range']['max']
 
             else:
                 _LOGGER.debug("%s - %s: _init_platform_specific: cap unhandled: %s", self._api_id, self._identifier, cap)
@@ -198,7 +201,7 @@ class GoveeLifeHumidifier(HumidifierEntity, GoveeLifePlatformEntity):
             return STATE_UNKNOWN
 
 
-    async def async_set_preset_mode(self, preset_mode: str) -> None:
+    async def async_set_mode(self, preset_mode: str) -> None:
         """Set new target preset mode."""
         #_LOGGER.debug("%s - %s: async_set_preset_mode", self._api_id, self._identifier)
         state_capability = {
