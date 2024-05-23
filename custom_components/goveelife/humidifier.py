@@ -13,8 +13,6 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import DeviceInfo
 
 from homeassistant.components.humidifier import (
-    DEFAULT_MAX_HUMIDITY,
-    DEFAULT_MIN_HUMIDITY,
     MODE_AUTO,
     HumidifierDeviceClass,
     HumidifierEntity,
@@ -43,7 +41,10 @@ from .utils import (
 
 _LOGGER: Final = logging.getLogger(__name__)
 platform='humidifier'
-platform_device_types = [ 'devices.types.humidifier' ]
+platform_device_types = [
+    'devices.types.humidifier',
+    'devices.types.dehumidifier'
+]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
     """Set up the humidifier platform."""
@@ -86,11 +87,14 @@ class GoveeLifeHumidifier(HumidifierEntity, GoveeLifePlatformEntity):
     _attr_available_modes = []
     _attr_preset_modes_mapping = {}
     _attr_preset_modes_mapping_set = {}
-    _attr_device_class = HumidifierDeviceClass.HUMIDIFIER
 
     def _init_platform_specific(self, **kwargs):
         """Platform specific init actions"""
         _LOGGER.debug("%s - %s: _init_platform_specific", self._api_id, self._identifier)
+        self.device_class = self._device_cfg.get('type',[])
+        if (self.device_class == "devices.types.humidifier"): self._attr_device_class = HumidifierDeviceClass.HUMIDIFIER
+        if (self.device_class == "devices.types.dehumidifier"): self._attr_device_class = HumidifierDeviceClass.DEHUMIDIFIER
+
         capabilities = self._device_cfg.get('capabilities',[])
 
         _LOGGER.debug("%s - %s: _init_platform_specific: processing devices request capabilities", self._api_id, self._identifier)
@@ -129,10 +133,9 @@ class GoveeLifeHumidifier(HumidifierEntity, GoveeLifePlatformEntity):
             else:
                 _LOGGER.debug("%s - %s: _init_platform_specific: cap unhandled: %s", self._api_id, self._identifier, cap)
 
-
     @property
-    def state(self) -> str | None:
-        """Return the current state of the entity."""
+    def current_humidity(self) -> float:
+        """Return current humidity."""
         value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.on_off', 'powerSwitch')
         v = self._state_mapping.get(value,STATE_UNKNOWN)
         if v == STATE_UNKNOWN:
@@ -146,6 +149,11 @@ class GoveeLifeHumidifier(HumidifierEntity, GoveeLifePlatformEntity):
         if self.state == STATE_ON:
             return True
         return False
+    
+    @property
+    def mode(self) -> str | None:
+        """Return current mode."""
+        return MODE_AUTO #if self._api_automatic else MODE_NORMAL
 
     async def async_turn_on(self, speed: str = None, mode: str = None, **kwargs) -> None:
         """Async: Turn entity on"""
@@ -182,24 +190,6 @@ class GoveeLifeHumidifier(HumidifierEntity, GoveeLifePlatformEntity):
             return None            
         except Exception as e:
             _LOGGER.error("%s - %s: async_turn_off failed: %s (%s.%s)", self._api_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
-
-
-    @property
-    def preset_mode(self) -> str | None:
-        """Return the preset_mode of the entity."""
-        #_LOGGER.debug("%s - %s: preset_mode", self._api_id, self._identifier)  
-        value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.work_mode', 'workMode')
-        v = { "workMode" : value['workMode'], "modeValue" : value['modeValue'] }
-        #preset = list(self._attr_preset_modes_mapping_set.keys())[list(self._attr_preset_modes_mapping_set.values()).index(v)]
-        key_list = [key for key, val in self._attr_preset_modes_mapping_set.items() if val == v]
-
-        if len(key_list) > 0:
-            return key_list[0]
-        else:
-            _LOGGER.warning("%s - %s: preset_mode: invalid value: %s", self._api_id, self._identifier, v)
-            _LOGGER.debug("%s - %s: preset_mode: valid are: %s", self._api_id, self._identifier, self._attr_preset_modes_mapping_set)
-            return STATE_UNKNOWN
-
 
     async def async_set_mode(self, preset_mode: str) -> None:
         """Set new target preset mode."""
