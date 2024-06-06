@@ -38,6 +38,7 @@ platform='switch'
 platform_device_types = [ 
     'devices.types.heater:.*on_off:.*',
     'devices.types.heater:.*toggle:oscillationToggle',
+    'devices.types.fan:.*toggle:oscillationToggle',
     'devices.types.socket:.*on_off:.*', 
     'devices.types.socket:.*toggle:.*', 
     'devices.types.light:.*toggle:gradientToggle',
