@@ -37,7 +37,10 @@ from .utils import (
 
 _LOGGER: Final = logging.getLogger(__name__)
 platform='fan'
-platform_device_types = [ 'devices.types.air_purifier' ]
+platform_device_types = [
+    'devices.types.air_purifier',
+    'devices.types.fan'
+]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
     """Set up the fan platform."""
