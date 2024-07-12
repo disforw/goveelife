@@ -3,26 +3,19 @@
 from __future__ import annotations
 from typing import Final
 import logging
-import asyncio
-import async_timeout
 import os
 from datetime import timedelta
 
-from homeassistant.core import (
-    HomeAssistant,
-    callback,
-)
+import async_timeout
+
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity import (
     DeviceInfo,
     Entity,
-    EntityCategory,
     generate_entity_id,
 )
-from homeassistant.helpers.update_coordinator import (
-    CoordinatorEntity,
-    DataUpdateCoordinator,
-)
+from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
 from homeassistant.const import (
     CONF_FRIENDLY_NAME,
     CONF_PARAMS,
@@ -38,10 +31,7 @@ from .const import (
     STATE_DEBUG_FILENAME, 
 )
 
-from .utils import (
-    ProgrammingDebug,
-    async_GoveeAPI_GetDeviceState,
-)
+from .utils import async_GoveeAPI_GetDeviceState
 
 _LOGGER: Final = logging.getLogger(__name__)
 
