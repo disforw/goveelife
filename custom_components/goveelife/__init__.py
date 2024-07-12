@@ -20,7 +20,7 @@ from .const import (
     FUNC_OPTION_UPDATES,
     SUPPORTED_PLATFORMS,
 )
-from .entities import  (
+from .entities import (
     GoveeAPIUpdateCoordinator,
 )
 from .services import (
@@ -43,10 +43,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.debug("%s - async_setup_entry: Creating data store: %s.%s ", entry.entry_id, DOMAIN, entry.entry_id)
         hass.data.setdefault(DOMAIN, {})
         hass.data[DOMAIN].setdefault(entry.entry_id, {})
-        entry_data=hass.data[DOMAIN][entry.entry_id]
-        entry_data[CONF_PARAMS]=entry.data
+        entry_data = hass.data[DOMAIN][entry.entry_id]
+        entry_data[CONF_PARAMS] = entry.data
         entry_data[CONF_SCAN_INTERVAL] = None
-        #entry_data.setdefault(CONF_PUSH_ENTITIES, {})
     except Exception as e:
         _LOGGER.error("%s - async_setup_entry: Creating data store failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return False
@@ -57,7 +56,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if api_devices is None:
             return False
         entry_data[CONF_DEVICES] = api_devices
-        #_LOGGER.debug("%s - async_setup_entry: api_devices= %s", entry.entry_id, api_devices)
     except Exception as e:
         _LOGGER.error("%s - async_setup_entry: Receiving cloud devices failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return False 
@@ -66,28 +64,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.debug("%s - async_setup_entry: Creating update coordinators per device..", entry.entry_id)
         entry_data.setdefault(CONF_COORDINATORS, {})
         for device_cfg in api_devices:
-            #_LOGGER.debug("%s - async_setup_entry: device_cfg= %s", entry.entry_id, device_cfg)            
-            await async_GoveeAPI_GetDeviceState(hass, entry.entry_id, device_cfg) #initial request all states            
+            await async_GoveeAPI_GetDeviceState(hass, entry.entry_id, device_cfg)
             coordinator = GoveeAPIUpdateCoordinator(hass, entry.entry_id, device_cfg)
             d = device_cfg.get('device')
-            entry_data[CONF_COORDINATORS][d]=coordinator            
+            entry_data[CONF_COORDINATORS][d] = coordinator            
     except Exception as e:
         _LOGGER.error("%s - async_setup_entry: Creating update coordinators failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return False 
 
     try:
         _LOGGER.debug("%s - async_setup_entry: Register option updates listener: %s ", entry.entry_id, FUNC_OPTION_UPDATES)
-        entry_data[FUNC_OPTION_UPDATES] = entry.add_update_listener(options_update_listener) 
+        entry_data[FUNC_OPTION_UPDATES] = entry.add_update_listener(options_update_listener)
     except Exception as e:
         _LOGGER.error("%s - async_setup_entry: Register option updates listener failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return False
 
     try:
-        for platform in SUPPORTED_PLATFORMS:
-            _LOGGER.debug("%s - async_setup_entry: Trigger setup for platform: %s ", entry.entry_id, platform)
-            hass.async_create_task(hass.config_entries.async_forward_entry_setup(entry, platform))
+        await hass.config_entries.async_forward_entry_setups(entry, SUPPORTED_PLATFORMS)
     except Exception as e:
-        _LOGGER.error("%s - async_setup_entry: Setup trigger for platform %s failed: %s (%s.%s)", entry.entry_id, platform, str(e), e.__class__.__module__, type(e).__name__)
+        _LOGGER.error("%s - async_setup_entry: Setup trigger for platform failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return False
 
     try:
@@ -102,7 +97,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def options_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Handle options update."""
-    _LOGGER.debug("Update options / relaod config entry: %s", entry.entry_id)
+    _LOGGER.debug("Update options / reload config entry: %s", entry.entry_id)
     await hass.config_entries.async_reload(entry.entry_id)
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -112,8 +107,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         all_ok = True
         for platform in SUPPORTED_PLATFORMS:
             _LOGGER.debug("%s - async_unload_entry: unload platform: %s", entry.entry_id, platform)
-            platform_ok = await asyncio.gather(*[hass.config_entries.async_forward_entry_unload(entry, platform)])
-
+            platform_ok = await hass.config_entries.async_forward_entry_unload(entry, platform)
             if not platform_ok:
                 _LOGGER.error("%s - async_unload_entry: failed to unload: %s (%s)", entry.entry_id, platform, platform_ok)
                 all_ok = platform_ok
@@ -127,4 +121,3 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except Exception as e:
         _LOGGER.error("%s - async_unload_entry: Unload device failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return False
-
