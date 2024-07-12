@@ -1,78 +1,61 @@
 """Sensor entities for the Govee Life integration."""
 
-from __future__ import annotations
-from typing import Final
 import logging
 import asyncio
-import math
 
-from homeassistant.core import (
-    HomeAssistant,
-)
+from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import DeviceInfo
-
-from homeassistant.components.fan import (FanEntity, FanEntityFeature)
+from homeassistant.components.fan import FanEntity, FanEntityFeature
 from homeassistant.const import (
-    CONF_DEVICES,
     STATE_ON,
     STATE_OFF,
     STATE_UNKNOWN,
 )
 
-from .entities import (
-    GoveeLifePlatformEntity,
-)
+from .entities import GoveeLifePlatformEntity
+from .const import DOMAIN, CONF_COORDINATORS
+from .utils import GoveeAPI_GetCachedStateValue, async_GoveeAPI_ControlDevice
 
-from .const import (
-    DOMAIN,
-    CONF_COORDINATORS,
-)
-
-from .utils import (
-    GoveeAPI_GetCachedStateValue,
-    async_GoveeAPI_ControlDevice,
-)
-
-_LOGGER: Final = logging.getLogger(__name__)
-platform='fan'
-platform_device_types = [
+_LOGGER = logging.getLogger(__name__)
+PLATFORM = 'fan'
+PLATFORM_DEVICE_TYPES = [
     'devices.types.air_purifier',
     'devices.types.fan'
 ]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
     """Set up the fan platform."""
-    _LOGGER.debug("Setting up %s platform entry: %s | %s", platform, DOMAIN, entry.entry_id)
-    entites=[]
-        
+    _LOGGER.debug("Setting up %s platform entry: %s | %s", PLATFORM, DOMAIN, entry.entry_id)
+    entities = []
+
     try:
-        _LOGGER.debug("%s - async_setup_entry %s: Getting cloud devices from data store", entry.entry_id, platform)
-        entry_data=hass.data[DOMAIN][entry.entry_id]
-        api_devices=entry_data[CONF_DEVICES]
+        _LOGGER.debug("%s - async_setup_entry %s: Getting cloud devices from data store", entry.entry_id, PLATFORM)
+        entry_data = hass.data[DOMAIN][entry.entry_id]
+        api_devices = entry_data.get('devices', [])
     except Exception as e:
-        _LOGGER.error("%s - async_setup_entry %s: Getting cloud devices from data store failed: %s (%s.%s)", entry.entry_id, platform, str(e), e.__class__.__module__, type(e).__name__)
+        _LOGGER.error("%s - async_setup_entry %s: Getting cloud devices from data store failed: %s (%s.%s)", entry.entry_id, PLATFORM, str(e), e.__class__.__module__, type(e).__name__)
         return False
 
     for device_cfg in api_devices:
         try:
-            if not device_cfg.get('type',STATE_UNKNOWN) in platform_device_types:
-                continue      
-            d=device_cfg.get('device')
-            _LOGGER.debug("%s - async_setup_entry %s: Setup device: %s", entry.entry_id, platform, d) 
-            coordinator = entry_data[CONF_COORDINATORS][d]
-            entity=GoveeLifeFan(hass, entry, coordinator, device_cfg, platform=platform)
-            entites.append(entity)
+            if device_cfg.get('type', STATE_UNKNOWN) not in PLATFORM_DEVICE_TYPES:
+                continue
+
+            device_id = device_cfg.get('device')
+            _LOGGER.debug("%s - async_setup_entry %s: Setup device: %s", entry.entry_id, PLATFORM, device_id)
+            coordinator = entry_data[CONF_COORDINATORS][device_id]
+            entity = GoveeLifeFan(hass, entry, coordinator, device_cfg, platform=PLATFORM)
+            entities.append(entity)
             await asyncio.sleep(0)
         except Exception as e:
-            _LOGGER.error("%s - async_setup_entry %s: Setup device failed: %s (%s.%s)", entry.entry_id, platform, str(e), e.__class__.__module__, type(e).__name__)
+            _LOGGER.error("%s - async_setup_entry %s: Setup device failed: %s (%s.%s)", entry.entry_id, PLATFORM, str(e), e.__class__.__module__, type(e).__name__)
             return False
 
-    _LOGGER.info("%s - async_setup_entry: setup %s %s entities", entry.entry_id, len(entites), platform)
-    if not entites:
+    _LOGGER.info("%s - async_setup_entry: setup %s %s entities", entry.entry_id, len(entities), PLATFORM)
+    if not entities:
         return None
-    async_add_entities(entites)
+    async_add_entities(entities)
 
 
 class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
@@ -85,13 +68,11 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
     _attr_preset_modes_mapping_set = {}
 
     def _init_platform_specific(self, **kwargs):
-        """Platform specific init actions"""
+        """Platform specific initialization actions."""
         _LOGGER.debug("%s - %s: _init_platform_specific", self._api_id, self._identifier)
-        capabilities = self._device_cfg.get('capabilities',[])
+        capabilities = self._device_cfg.get('capabilities', [])
 
-        _LOGGER.debug("%s - %s: _init_platform_specific: processing devices request capabilities", self._api_id, self._identifier)
         for cap in capabilities:
-            _LOGGER.debug("%s - %s: _init_platform_specific: processing cap: %s", self._api_id, self._identifier, cap)
             if cap['type'] == 'devices.capabilities.on_off':
                 for option in cap['parameters']['options']:
                     if option['name'] == 'on':
@@ -113,35 +94,24 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                             if valueOption['name'] == 'gearMode':
                                 for gearOption in valueOption.get('options', []):
                                     self._attr_preset_modes.append(gearOption['name'])
-                                    self._attr_preset_modes_mapping_set[gearOption['name']] = { "workMode" : self._attr_preset_modes_mapping[valueOption['name']], "modeValue" : gearOption['value'] }
-                                    _LOGGER.debug("Adding PRESET mode of %s: %s", gearOption['name'], self._attr_preset_modes_mapping_set[gearOption['name']])
-                            elif not valueOption['name'] == 'Custom':
+                                    self._attr_preset_modes_mapping_set[gearOption['name']] = {"workMode": self._attr_preset_modes_mapping[valueOption['name']], "modeValue": gearOption['value']}
+                            elif valueOption['name'] != 'Custom':
                                 self._attr_preset_modes.append(valueOption['name'])
-                                self._attr_preset_modes_mapping_set[valueOption['name']] = { "workMode" : self._attr_preset_modes_mapping[valueOption['name']], "modeValue" : valueOption['value'] }
-
-            else:
-                _LOGGER.debug("%s - %s: _init_platform_specific: cap unhandled: %s", self._api_id, self._identifier, cap)
-
+                                self._attr_preset_modes_mapping_set[valueOption['name']] = {"workMode": self._attr_preset_modes_mapping[valueOption['name']], "modeValue": valueOption['value']}
 
     @property
     def state(self) -> str | None:
         """Return the current state of the entity."""
         value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.on_off', 'powerSwitch')
-        v = self._state_mapping.get(value,STATE_UNKNOWN)
-        if v == STATE_UNKNOWN:
-            _LOGGER.warning("%s - %s: state: invalid value: %s", self._api_id, self._identifier, value)
-            _LOGGER.debug("%s - %s: state: valid are: %s", self._api_id, self._identifier, self._state_mapping)
-        return v
+        return self._state_mapping.get(value, STATE_UNKNOWN)
 
     @property
     def is_on(self) -> bool:
         """Return true if entity is on."""
-        if self.state == STATE_ON:
-            return True
-        return False
+        return self.state == STATE_ON
 
     async def async_turn_on(self, speed: str = None, mode: str = None, **kwargs) -> None:
-        """Async: Turn entity on"""
+        """Async: Turn entity on."""
         try:
             _LOGGER.debug("%s - %s: async_turn_on: kwargs = %s", self._api_id, self._identifier, kwargs)
             if not self.is_on:
@@ -149,17 +119,16 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                     "type": "devices.capabilities.on_off",
                     "instance": 'powerSwitch',
                     "value": self._state_mapping_set[STATE_ON]
-                    }
+                }
                 if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
                     self.async_write_ha_state()
             else:
                 _LOGGER.debug("%s - %s: async_turn_on: device already on", self._api_id, self._identifier)
-            return None
         except Exception as e:
             _LOGGER.error("%s - %s: async_turn_on failed: %s (%s.%s)", self._api_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
 
     async def async_turn_off(self, **kwargs) -> None:
-        """Async: Turn entity off"""
+        """Async: Turn entity off."""
         try:
             _LOGGER.debug("%s - %s: async_turn_off: kwargs = %s", self._api_id, self._identifier, kwargs)
             if self.is_on:
@@ -167,41 +136,34 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                     "type": "devices.capabilities.on_off",
                     "instance": 'powerSwitch',
                     "value": self._state_mapping_set[STATE_OFF]
-                    }
+                }
                 if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
                     self.async_write_ha_state()
             else:
                 _LOGGER.debug("%s - %s: async_turn_on: device already off", self._api_id, self._identifier)
-            return None            
         except Exception as e:
             _LOGGER.error("%s - %s: async_turn_off failed: %s (%s.%s)", self._api_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
-
 
     @property
     def preset_mode(self) -> str | None:
         """Return the preset_mode of the entity."""
-        #_LOGGER.debug("%s - %s: preset_mode", self._api_id, self._identifier)  
         value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.work_mode', 'workMode')
-        v = { "workMode" : value['workMode'], "modeValue" : value['modeValue'] }
-        #preset = list(self._attr_preset_modes_mapping_set.keys())[list(self._attr_preset_modes_mapping_set.values()).index(v)]
+        v = {"workMode": value['workMode'], "modeValue": value['modeValue']}
         key_list = [key for key, val in self._attr_preset_modes_mapping_set.items() if val == v]
 
-        if len(key_list) > 0:
+        if key_list:
             return key_list[0]
         else:
             _LOGGER.warning("%s - %s: preset_mode: invalid value: %s", self._api_id, self._identifier, v)
             _LOGGER.debug("%s - %s: preset_mode: valid are: %s", self._api_id, self._identifier, self._attr_preset_modes_mapping_set)
             return STATE_UNKNOWN
 
-
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set new target preset mode."""
-        #_LOGGER.debug("%s - %s: async_set_preset_mode", self._api_id, self._identifier)
         state_capability = {
             "type": "devices.capabilities.work_mode",
             "instance": "workMode",
             "value": self._attr_preset_modes_mapping_set[preset_mode]
-            }
+        }
         if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
             self.async_write_ha_state()
-        return None
