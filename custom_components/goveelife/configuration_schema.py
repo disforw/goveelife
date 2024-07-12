@@ -1,5 +1,5 @@
 """Configuration schema for Govee Life."""
-
+import logging
 import asyncio
 from typing import Optional
 
