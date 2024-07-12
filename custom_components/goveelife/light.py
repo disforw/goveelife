@@ -6,21 +6,14 @@ import logging
 import asyncio
 import math
 
-from homeassistant.core import (
-    HomeAssistant,
-)
+from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.util.color import (
-    brightness_to_value,
-    value_to_brightness,
-)
+from homeassistant.util.color import brightness_to_value, value_to_brightness
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_COLOR_TEMP_KELVIN,
-    ATTR_MIN_COLOR_TEMP_KELVIN,
-    ATTR_MIN_COLOR_TEMP_KELVIN,
     ATTR_RGB_COLOR,
     ColorMode,
     LightEntity,
@@ -32,72 +25,60 @@ from homeassistant.const import (
     STATE_UNKNOWN,
 )
 
-from .entities import (
-    GoveeLifePlatformEntity,
-)
-
-from .const import (
-    DOMAIN,
-    CONF_COORDINATORS,
-)
-
-from .utils import (
-    GoveeAPI_GetCachedStateValue,
-    async_GoveeAPI_ControlDevice,
-)
+from .entities import GoveeLifePlatformEntity
+from .const import DOMAIN, CONF_COORDINATORS
+from .utils import GoveeAPI_GetCachedStateValue, async_GoveeAPI_ControlDevice
 
 _LOGGER: Final = logging.getLogger(__name__)
-platform='light'
-platform_device_types = [ 'devices.types.light' ]
+platform = 'light'
+platform_device_types = ['devices.types.light']
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
     """Set up the light platform."""
     _LOGGER.debug("Setting up %s platform entry: %s | %s", platform, DOMAIN, entry.entry_id)
-    entites=[]
+    entities = []
         
     try:
         _LOGGER.debug("%s - async_setup_entry %s: Getting cloud devices from data store", entry.entry_id, platform)
-        entry_data=hass.data[DOMAIN][entry.entry_id]
-        api_devices=entry_data[CONF_DEVICES]
+        entry_data = hass.data[DOMAIN][entry.entry_id]
+        api_devices = entry_data[CONF_DEVICES]
     except Exception as e:
         _LOGGER.error("%s - async_setup_entry %s: Getting cloud devices from data store failed: %s (%s.%s)", entry.entry_id, platform, str(e), e.__class__.__module__, type(e).__name__)
         return False
 
     for device_cfg in api_devices:
         try:
-            if not device_cfg.get('type',STATE_UNKNOWN) in platform_device_types:
+            if not device_cfg.get('type', STATE_UNKNOWN) in platform_device_types:
                 continue      
-            d=device_cfg.get('device')
+            d = device_cfg.get('device')
             _LOGGER.debug("%s - async_setup_entry %s: Setup device: %s", entry.entry_id, platform, d) 
             coordinator = entry_data[CONF_COORDINATORS][d]
-            entity=GoveeLifeLight(hass, entry, coordinator, device_cfg, platform=platform)
-            entites.append(entity)
+            entity = GoveeLifeLight(hass, entry, coordinator, device_cfg, platform=platform)
+            entities.append(entity)
             await asyncio.sleep(0)
         except Exception as e:
             _LOGGER.error("%s - async_setup_entry %s: Setup device failed: %s (%s.%s)", entry.entry_id, platform, str(e), e.__class__.__module__, type(e).__name__)
             return False
 
-    _LOGGER.info("%s - async_setup_entry: setup %s %s entities", entry.entry_id, len(entites), platform)
-    if not entites:
+    _LOGGER.info("%s - async_setup_entry: setup %s %s entities", entry.entry_id, len(entities), platform)
+    if not entities:
         return None
-    async_add_entities(entites)
-
+    async_add_entities(entities)
 
 class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity):
     """Light class for Govee Life integration."""
 
     _state_mapping = {}
     _state_mapping_set = {}
-    _attr_supported_color_modes = {ColorMode.UNKNOWN}
+    _attr_supported_color_modes = set()
 
     def _init_platform_specific(self, **kwargs):
         """Platform specific init actions"""
         _LOGGER.debug("%s - %s: _init_platform_specific", self._api_id, self._identifier)
-        capabilities = self._device_cfg.get('capabilities',[])
+        capabilities = self._device_cfg.get('capabilities', [])
 
         _LOGGER.debug("%s - %s: _init_platform_specific: processing devices request capabilities", self._api_id, self._identifier)
         for cap in capabilities:
-            #_LOGGER.debug("%s - %s: _init_platform_specific: processing cap: %s", self._api_id, self._identifier, cap)
             if cap['type'] == 'devices.capabilities.on_off':
                 self._attr_supported_color_modes.add(ColorMode.ONOFF)
                 for option in cap['parameters']['options']:
@@ -117,40 +98,38 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity):
             elif cap['type'] == 'devices.capabilities.color_setting' and cap['instance'] == 'colorTemperatureK':
                 self._attr_supported_color_modes.add(ColorMode.COLOR_TEMP)
                 self._attr_min_color_temp_kelvin = cap['parameters']['range']['min']
-                self._attr_max_color_temp_kelvin = cap['parameters']['range']['max']  
+                self._attr_max_color_temp_kelvin = cap['parameters']['range']['max']
             elif cap['type'] == 'devices.capabilities.toggle' and cap['instance'] == 'gradientToggle':
-                pass #impletmented as switch entity type             
+                pass  # implemented as switch entity type
             elif cap['type'] == 'devices.capabilities.segment_color_setting':
-                pass #TO-BE-DONE - implement as service?
+                pass  # TO-BE-DONE - implement as service?
             elif cap['type'] == 'devices.capabilities.dynamic_scene':
-                pass #TO-BE-DONE: implement as select entity type
+                pass  # TO-BE-DONE: implement as select entity type
             elif cap['type'] == 'devices.capabilities.music_setting':
-                pass #TO-BE-DONE: implement as select entity type
+                pass  # TO-BE-DONE: implement as select entity type
             elif cap['type'] == 'devices.capabilities.dynamic_setting':
-                pass #TO-BE-DONE: implement as select ? unsure about setting effect            
+                pass  # TO-BE-DONE: implement as select ? unsure about setting effect
             else:
                 _LOGGER.debug("%s - %s: _init_platform_specific: cap unhandled: %s", self._api_id, self._identifier, cap)
 
     def _getRGBfromI(self, RGBint):
-        blue =  RGBint & 255
+        blue = RGBint & 255
         green = (RGBint >> 8) & 255
-        red =   (RGBint >> 16) & 255
+        red = (RGBint >> 16) & 255
         return red, green, blue
 
     def _getIfromRGB(self, rgb):
         red = rgb[0]
         green = rgb[1]
         blue = rgb[2]
-        #print red, green, blue
-        RGBint = (red<<16) + (green<<8) + blue
+        RGBint = (red << 16) + (green << 8) + blue
         return RGBint
-
 
     @property
     def state(self) -> str | None:
         """Return the current state of the entity."""
         value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.on_off', 'powerSwitch')
-        v = self._state_mapping.get(value,STATE_UNKNOWN)
+        v = self._state_mapping.get(value, STATE_UNKNOWN)
         if v == STATE_UNKNOWN:
             _LOGGER.warning("%s - %s: state: invalid value: %s", self._api_id, self._identifier, value)
             _LOGGER.debug("%s - %s: state: valid are: %s", self._api_id, self._identifier, self._state_mapping)
@@ -159,9 +138,7 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity):
     @property
     def is_on(self) -> bool:
         """Return true if entity is on."""
-        if self.state == STATE_ON: 
-            return True
-        return False
+        return self.state == STATE_ON
 
     @property
     def brightness(self) -> int | None:
@@ -187,30 +164,30 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity):
             _LOGGER.debug("%s - %s: async_turn_on", self._api_id, self._identifier)
             _LOGGER.debug("%s - %s: async_turn_on: kwargs = %s", self._api_id, self._identifier, kwargs)
             
-            if kwargs.get(ATTR_BRIGHTNESS, False):
+            if ATTR_BRIGHTNESS in kwargs:
                 state_capability = {
                     "type": "devices.capabilities.range",
                     "instance": 'brightness',
                     "value": math.ceil(brightness_to_value(self._brightness_scale, kwargs[ATTR_BRIGHTNESS]))   
-                    }
+                }
                 if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
-                    self.async_write_ha_state()       
+                    self.async_write_ha_state()
 
-            if kwargs.get(ATTR_COLOR_TEMP_KELVIN, False):
+            if ATTR_COLOR_TEMP_KELVIN in kwargs:
                 state_capability = {
                     "type": "devices.capabilities.color_setting",
                     "instance": 'colorTemperatureK',
-                    "value": kwargs[ATTR_COLOR_TEMP_KELVIN] 
-                    }
+                    "value": kwargs[ATTR_COLOR_TEMP_KELVIN]
+                }
                 if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
                     self.async_write_ha_state()
-            
-            if kwargs.get(ATTR_RGB_COLOR, False):
+
+            if ATTR_RGB_COLOR in kwargs:
                 state_capability = {
                     "type": "devices.capabilities.color_setting",
                     "instance": 'colorRgb',
                     "value": self._getIfromRGB(kwargs[ATTR_RGB_COLOR])
-                    }
+                }
                 if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
                     self.async_write_ha_state()
             
@@ -219,12 +196,11 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity):
                     "type": "devices.capabilities.on_off",
                     "instance": 'powerSwitch',
                     "value": self._state_mapping_set[STATE_ON]
-                    }
+                }
                 if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
                     self.async_write_ha_state()
             else:
                 _LOGGER.debug("%s - %s: async_turn_on: device already on", self._api_id, self._identifier)
-            return None
         except Exception as e:
             _LOGGER.error("%s - %s: async_turn_on failed: %s (%s.%s)", self._api_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
 
@@ -238,11 +214,10 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity):
                     "type": "devices.capabilities.on_off",
                     "instance": 'powerSwitch',
                     "value": self._state_mapping_set[STATE_OFF]
-                    }
+                }
                 if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
                     self.async_write_ha_state()
             else:
                 _LOGGER.debug("%s - %s: async_turn_on: device already off", self._api_id, self._identifier)
-            return None            
         except Exception as e:
             _LOGGER.error("%s - %s: async_turn_off failed: %s (%s.%s)", self._api_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
