@@ -179,4 +179,45 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity):
                     "instance": 'colorTemperatureK',
                     "value": kwargs[ATTR_COLOR_TEMP_KELVIN]
                 }
-                if await async_GoveeAPI_Control
+                if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
+                    self.async_write_ha_state()
+
+            if ATTR_RGB_COLOR in kwargs:
+                state_capability = {
+                    "type": "devices.capabilities.color_setting",
+                    "instance": 'colorRgb',
+                    "value": self._getIfromRGB(kwargs[ATTR_RGB_COLOR])
+                }
+                if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
+                    self.async_write_ha_state()
+            
+            if not self.is_on:
+                state_capability = {
+                    "type": "devices.capabilities.on_off",
+                    "instance": 'powerSwitch',
+                    "value": self._state_mapping_set[STATE_ON]
+                }
+                if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
+                    self.async_write_ha_state()
+            else:
+                _LOGGER.debug("%s - %s: async_turn_on: device already on", self._api_id, self._identifier)
+        except Exception as e:
+            _LOGGER.error("%s - %s: async_turn_on failed: %s (%s.%s)", self._api_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
+
+    async def async_turn_off(self, **kwargs) -> None:
+        """Async: Turn entity off"""
+        try:
+            _LOGGER.debug("%s - %s: async_turn_off", self._api_id, self._identifier)
+            _LOGGER.debug("%s - %s: async_turn_off: kwargs = %s", self._api_id, self._identifier, kwargs)
+            if self.is_on:
+                state_capability = {
+                    "type": "devices.capabilities.on_off",
+                    "instance": 'powerSwitch',
+                    "value": self._state_mapping_set[STATE_OFF]
+                }
+                if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
+                    self.async_write_ha_state()
+            else:
+                _LOGGER.debug("%s - %s: async_turn_on: device already off", self._api_id, self._identifier)
+        except Exception as e:
+            _LOGGER.error("%s - %s: async_turn_off failed: %s (%s.%s)", self._api_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
