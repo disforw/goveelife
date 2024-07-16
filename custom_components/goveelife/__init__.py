@@ -105,6 +105,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     try:
         _LOGGER.debug("Unloading config entry: %s", entry.entry_id)
         all_ok = True
+
+        # Unload platforms
         for platform in SUPPORTED_PLATFORMS:
             _LOGGER.debug("%s - async_unload_entry: unload platform: %s", entry.entry_id, platform)
             platform_ok = await hass.config_entries.async_forward_entry_unload(entry, platform)
@@ -113,10 +115,21 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 all_ok = platform_ok
 
         if all_ok:
+            # Remove entities from the entity registry
+            entity_registry = hass.helpers.entity_registry.async_get(hass)
+            entities = async_entries_for_config_entry(entity_registry, entry.entry_id)
+            for entity in entities:
+                _LOGGER.debug("%s - async_unload_entry: removing entity: %s", entry.entry_id, entity.entity_id)
+                entity_registry.async_remove(entity.entity_id)
+
+            # Unload option updates listener
             _LOGGER.debug("%s - async_unload_entry: Unload option updates listener: %s.%s ", entry.entry_id, FUNC_OPTION_UPDATES)
             hass.data[DOMAIN][entry.entry_id][FUNC_OPTION_UPDATES]()
+
+            # Remove data store
             _LOGGER.debug("%s - async_unload_entry: Remove data store: %s.%s ", entry.entry_id, DOMAIN, entry.entry_id)
             hass.data[DOMAIN].pop(entry.entry_id)
+
         return all_ok
     except Exception as e:
         _LOGGER.error("%s - async_unload_entry: Unload device failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
