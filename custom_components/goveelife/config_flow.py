@@ -41,8 +41,7 @@ class ConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle a flow initialized by the user."""
         _LOGGER.debug("%s - ConfigFlowHandler: async_step_user: %s", DOMAIN, user_input)
         try:
-            if not hasattr(self, 'data'):
-                self.data = {}
+            # Removed redundant initialization
             return await self.async_step_resource()
         except Exception as e:
             _LOGGER.error("%s - ConfigFlowHandler: async_step_user failed: %s (%s.%s)", DOMAIN, str(e), e.__class__.__module__, type(e).__name__)
@@ -55,7 +54,7 @@ class ConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             errors: Dict[str, str] = {}
             if user_input is not None:
                 _LOGGER.debug("%s - ConfigFlowHandler: async_step_resource add user_input to data", DOMAIN, user_input)
-                self.data=user_input
+                self.data = user_input
                 return await self.async_step_final()
             return self.async_show_form(step_id=CONF_RESOURCE, data_schema=GOVEELIFE_SCHEMA, errors=errors)
             # via the "step_id" the function calls itself after GUI completion
