@@ -27,6 +27,7 @@ _LOGGER: Final = logging.getLogger(__name__)
 PLATFORM = 'climate'
 PLATFORM_DEVICE_TYPES = ['devices.types.heater']
 
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     """Set up the climate platform."""
     _LOGGER.debug("Setting up %s platform entry: %s | %s", PLATFORM, DOMAIN, entry.entry_id)
@@ -36,7 +37,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         entry_data = hass.data[DOMAIN][entry.entry_id]
         api_devices = entry_data[CONF_DEVICES]
     except Exception as e:
-        _LOGGER.error("%s - async_setup_entry %s: Failed to get cloud devices from data store: %s (%s.%s)", entry.entry_id, PLATFORM, str(e), e.__class__.__module__, type(e).__name__)
+        _LOGGER.error(
+            "%s - async_setup_entry %s: Failed to get cloud devices from data store: %s (%s.%s)",
+            entry.entry_id,
+            PLATFORM,
+            str(e),
+            e.__class__.__module__,
+            type(e).__name__,
+        )
         return
 
     for device_cfg in api_devices:
@@ -49,7 +57,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             entities.append(entity)
             await asyncio.sleep(0)
         except Exception as e:
-            _LOGGER.error("%s - async_setup_entry %s: Failed to setup device: %s (%s.%s)", entry.entry_id, PLATFORM, str(e), e.__class__.__module__, type(e).__name__)
+            _LOGGER.error(
+                "%s - async_setup_entry %s: Failed to setup device: %s (%s.%s)",
+                entry.entry_id,
+                PLATFORM,
+                str(e),
+                e.__class__.__module__,
+                type(e).__name__,
+            )
             return
 
     if entities:
@@ -74,7 +89,6 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
 
         _LOGGER.debug("%s - %s: _init_platform_specific: processing devices request capabilities", self._api_id, self._identifier)
         for cap in capabilities:
-            #_LOGGER.debug("%s - %s: _init_platform_specific: processing cap: %s", self._api_id, self._identifier, cap)
             if cap['type'] == 'devices.capabilities.on_off':
                 for option in cap['parameters']['options']:
                     if option['name'] == 'on':
@@ -99,12 +113,12 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
                     elif field['fieldName'] == 'unit':
                         self._attr_temperature_unit = UnitOfTemperature[field['defaultValue'].upper()]
                     elif field['fieldName'] == 'autoStop':
-                        pass #TO-BE-DONE: implement as switch entity type
+                        pass  # TO-BE-DONE: implement as switch entity type
             elif cap['type'] == 'devices.capabilities.work_mode':
                 self._attr_supported_features |= ClimateEntityFeature.PRESET_MODE
                 for capFieldWork in cap['parameters']['fields']:
                     if not capFieldWork['fieldName'] == 'workMode':
-                        continue                
+                        continue
                     for workOption in capFieldWork.get('options', []):
                         for capFieldValue in cap['parameters']['fields']:
                             if not capFieldValue['fieldName'] == 'modeValue':
@@ -112,29 +126,40 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
                             for valueOption in capFieldValue.get('options', []):
                                 if not valueOption['name'] == workOption['name']:
                                     continue
-                                if valueOption.get('options', None) is None: 
-                                    v=str(workOption['value'])+':'+str(valueOption['defaultValue'])
-                                    self._attr_preset_modes += [ workOption['name'] ]
+                                if valueOption.get('options', None) is None:
+                                    v = str(workOption['value']) + ':' + str(valueOption['defaultValue'])
+                                    self._attr_preset_modes += [workOption['name']]
                                     self._attr_preset_modes_mapping[v] = workOption['name']
-                                    self._attr_preset_modes_mapping_set[workOption['name']] = { "workMode" : workOption['value'], "modeValue" : valueOption['defaultValue'] }
+                                    self._attr_preset_modes_mapping_set[workOption['name']] = {
+                                        "workMode": workOption['value'],
+                                        "modeValue": valueOption['defaultValue'],
+                                    }
                                 else:
                                     for valueOptionOption in valueOption.get('options', []):
-                                        n=str(workOption['name'])+':'+str(valueOptionOption['name'])
-                                        v=str(workOption['value'])+':'+str(valueOptionOption['value'])
-                                        self._attr_preset_modes += [ n ]
+                                        n = str(workOption['name']) + ':' + str(valueOptionOption['name'])
+                                        v = str(workOption['value']) + ':' + str(valueOptionOption['value'])
+                                        self._attr_preset_modes += [n]
                                         self._attr_preset_modes_mapping[v] = n
-                                        self._attr_preset_modes_mapping_set[n] = { "workMode" : workOption['value'], "modeValue" : valueOptionOption['value'] }
+                                        self._attr_preset_modes_mapping_set[n] = {
+                                            "workMode": workOption['value'],
+                                            "modeValue": valueOptionOption['value'],
+                                        }
             elif cap['type'] == 'devices.capabilities.property' and cap['instance'] == 'sensorTemperature':
-                pass #do nothing as this is handled within 'current_temperature' property
+                pass  # do nothing as this is handled within 'current_temperature' property
             else:
                 _LOGGER.debug("%s - %s: _init_platform_specific: cap unhandled: %s", self._api_id, self._identifier, cap)
 
     @property
     def hvac_mode(self) -> str:
         """Return the hvac_mode of the entity."""
-        #_LOGGER.debug("%s - %s: hvac_mode", self._api_id, self._identifier)  
-        value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.on_off', 'powerSwitch')
-        v = self._attr_hvac_modes_mapping.get(value,STATE_UNKNOWN)
+        value = GoveeAPI_GetCachedStateValue(
+            self.hass,
+            self._entry_id,
+            self._device_cfg.get('device'),
+            'devices.capabilities.on_off',
+            'powerSwitch'
+        )
+        v = self._attr_hvac_modes_mapping.get(value, STATE_UNKNOWN)
         if v == STATE_UNKNOWN:
             _LOGGER.warning("%s - %s: hvac_mode: invalid value: %s", self._api_id, self._identifier, value)
             _LOGGER.debug("%s - %s: hvac_mode: valid are: %s", self._api_id, self._identifier, self._state_mapping)
@@ -142,12 +167,11 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set new target hvac mode."""
-        #_LOGGER.debug("%s - %s: async_set_hvac_mode", self._api_id, self._identifier) 
         state_capability = {
             "type": "devices.capabilities.on_off",
             "instance": "powerSwitch",
             "value": self._attr_hvac_modes_mapping_set[hvac_mode]
-            }
+        }
         if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
             self.async_write_ha_state()
         return None
@@ -163,45 +187,64 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
     @property
     def preset_mode(self) -> str | None:
         """Return the preset_mode of the entity."""
-        #_LOGGER.debug("%s - %s: preset_mode", self._api_id, self._identifier)  
-        value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.work_mode', 'workMode')
-        v=str(value['workMode'])+':'+str(value['modeValue'])
-        v=self._attr_preset_modes_mapping.get(v,STATE_UNKNOWN)
+        value = GoveeAPI_GetCachedStateValue(
+            self.hass,
+            self._entry_id,
+            self._device_cfg.get('device'),
+            'devices.capabilities.work_mode',
+            'workMode'
+        )
+        v = str(value['workMode']) + ':' + str(value['modeValue'])
+        v = self._attr_preset_modes_mapping.get(v, STATE_UNKNOWN)
         if v == STATE_UNKNOWN:
             _LOGGER.warning("%s - %s: preset_mode: invalid value: %s", self._api_id, self._identifier, value)
             _LOGGER.debug("%s - %s: preset_mode: valid are: %s", self._api_id, self._identifier, self._attr_preset_modes_mapping)
-        return v 
+        return v
 
     async def async_set_preset_mode(self, preset_mode) -> None:
         """Set new target preset mode."""
-        #_LOGGER.debug("%s - %s: async_set_preset_mode", self._api_id, self._identifier)
         state_capability = {
             "type": "devices.capabilities.work_mode",
             "instance": "workMode",
             "value": self._attr_preset_modes_mapping_set[preset_mode]
-            }
+        }
         if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
             self.async_write_ha_state()
         return None
-    
 
     @property
     def temperature_unit(self) -> str:
         """Return the temperature unit of the entity."""
-        value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.temperature_setting', 'targetTemperature')
+        value = GoveeAPI_GetCachedStateValue(
+            self.hass,
+            self._entry_id,
+            self._device_cfg.get('device'),
+            'devices.capabilities.temperature_setting',
+            'targetTemperature'
+        )
         return UnitOfTemperature[value.get('unit', 'CELSIUS').upper()]
 
     @property
     def target_temperature(self) -> float | None:
         """Return the target temperature of the entity."""
-        #_LOGGER.debug("%s - %s: target_temperature", self._api_id, self._identifier)
-        value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.temperature_setting', 'targetTemperature')
+        value = GoveeAPI_GetCachedStateValue(
+            self.hass,
+            self._entry_id,
+            self._device_cfg.get('device'),
+            'devices.capabilities.temperature_setting',
+            'targetTemperature'
+        )
         return value.get('targetTemperature', 0)
 
     async def async_set_temperature(self, **kwargs) -> None:
-        """Set new target temperature."""        
-        #_LOGGER.debug("%s - %s: async_set_temperature", self._api_id, self._identifier)
-        value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.temperature_setting', 'targetTemperature')
+        """Set new target temperature."""
+        value = GoveeAPI_GetCachedStateValue(
+            self.hass,
+            self._entry_id,
+            self._device_cfg.get('device'),
+            'devices.capabilities.temperature_setting',
+            'targetTemperature'
+        )
         unit = value.get('unit', 'Celsius')
         state_capability = {
             "type": "devices.capabilities.temperature_setting",
@@ -209,21 +252,23 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
             "value": {
                 "temperature": kwargs['temperature'],
                 "unit": unit,
-                }
             }
+        }
         if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
-            self.async_write_ha_state()      
+            self.async_write_ha_state()
         return None
-
 
     @property
     def current_temperature(self) -> float | None:
         """Return the current temperature of the entity."""
-        #_LOGGER.debug("%s - %s: current_temperature", self._api_id, self._identifier)  
-        value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.property', 'sensorTemperature')
+        value = GoveeAPI_GetCachedStateValue(
+            self.hass,
+            self._entry_id,
+            self._device_cfg.get('device'),
+            'devices.capabilities.property',
+            'sensorTemperature'
+        )
         if self.temperature_unit == UnitOfTemperature.CELSIUS:
-            #value seems to be always Fahrenheit - calculate to °C if necessary
+            # value seems to be always Fahrenheit - calculate to °C if necessary
             value = (value - 32) * 5 / 9
         return value
-
-
