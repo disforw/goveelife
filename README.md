@@ -31,3 +31,7 @@ Note: the integration has the option of changing the polling frequence which is 
 I need API responses so I can continue to build out this integration. You can provide these resonses by opening an "issue" at the top of this repository. It's pretty simple. Use any online API query tool, and submit a GET requ
 est to "https://openapi.api.govee.com/router/api/v1/user/devices". Make sure you include a single header called "Govee-API-Key" which should contain your API key aquired in your Govee app.
 When you submit the reponse as an issue above, make sure you alter any MAC addresses, and DO NOT incluse your API key in the post!
+
+
+For many folks setting up something like Postman or whatever to do the API call may be overkill... I'm pretty sure all Mac OSX, Linux and Windows 11 come with cURL installed by default...
+curl -H 'Govee-API-Key: YOURKEYHERE' -o 'Govee API response.json' -X GET https://openapi.api.govee.com/router/api/v1/user/devices
