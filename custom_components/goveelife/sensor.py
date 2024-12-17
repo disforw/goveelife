@@ -17,6 +17,7 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.const import (
     CONF_DEVICES,
     STATE_UNKNOWN,
+    CONF_STATE,
 )
 
 from .entities import GoveeLifePlatformEntity
@@ -99,6 +100,6 @@ class GoveeLifeSensor(GoveeLifePlatformEntity):
         """Handle updated data from the coordinator."""
         #self._attr_is_on = self.coordinator.data[self.idx]["state"]        
         d=self._device_cfg.get('device')
-        self.hass.data[DOMAIN][entry.entry_id][CONF_STATE][d]
+        self.hass.data[DOMAIN][self._entry_id][CONF_STATE][d]
         self.async_write_ha_state()
 
