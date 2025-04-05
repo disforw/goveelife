@@ -25,7 +25,10 @@ from .utils import GoveeAPI_GetCachedStateValue, async_GoveeAPI_ControlDevice
 
 _LOGGER: Final = logging.getLogger(__name__)
 PLATFORM = 'climate'
-PLATFORM_DEVICE_TYPES = ['devices.types.heater']
+PLATFORM_DEVICE_TYPES = [
+    'devices.types.heater',
+    'devices.types.kettle',
+]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     """Set up the climate platform."""
@@ -89,7 +92,7 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
                         self._attr_hvac_modes_mapping_set[HVACMode.OFF] = option['value']
                     else:
                         _LOGGER.warning("%s - %s: _init_platform_specific: unknown on_off option: %s", self._api_id, self._identifier, option)
-            elif cap['type'] == 'devices.capabilities.temperature_setting' and cap['instance'] == 'targetTemperature':
+            elif cap['type'] == 'devices.capabilities.temperature_setting' and (cap['instance'] in ['targetTemperature', 'sliderTemperature']):
                 self._attr_supported_features |= ClimateEntityFeature.TARGET_TEMPERATURE
                 for field in cap['parameters']['fields']:
                     if field['fieldName'] == 'temperature':
@@ -104,26 +107,25 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
                 self._attr_supported_features |= ClimateEntityFeature.PRESET_MODE
                 for capFieldWork in cap['parameters']['fields']:
                     if not capFieldWork['fieldName'] == 'workMode':
-                        continue                
+                        continue
+                    # Clear any existing modes to prevent duplicates
+                    self._attr_preset_modes = []
+                    self._attr_preset_modes_mapping = {}
+                    self._attr_preset_modes_mapping_set = {}
+
                     for workOption in capFieldWork.get('options', []):
-                        for capFieldValue in cap['parameters']['fields']:
-                            if not capFieldValue['fieldName'] == 'modeValue':
-                                continue
-                            for valueOption in capFieldValue.get('options', []):
-                                if not valueOption['name'] == workOption['name']:
-                                    continue
-                                if valueOption.get('options', None) is None: 
-                                    v=str(workOption['value'])+':'+str(valueOption['defaultValue'])
-                                    self._attr_preset_modes += [ workOption['name'] ]
-                                    self._attr_preset_modes_mapping[v] = workOption['name']
-                                    self._attr_preset_modes_mapping_set[workOption['name']] = { "workMode" : workOption['value'], "modeValue" : valueOption['defaultValue'] }
-                                else:
-                                    for valueOptionOption in valueOption.get('options', []):
-                                        n=str(workOption['name'])+':'+str(valueOptionOption['name'])
-                                        v=str(workOption['value'])+':'+str(valueOptionOption['value'])
-                                        self._attr_preset_modes += [ n ]
-                                        self._attr_preset_modes_mapping[v] = n
-                                        self._attr_preset_modes_mapping_set[n] = { "workMode" : workOption['value'], "modeValue" : valueOptionOption['value'] }
+                        if workOption['name'] not in self._attr_preset_modes:
+                            self._attr_preset_modes.append(workOption['name'])
+                            self._attr_preset_modes_mapping[workOption['name']] = workOption['value']
+                            # Get the temperature value for this mode
+                            mode_value = 0
+                            for field in cap['parameters']['fields']:
+                                if field['fieldName'] == 'modeValue' and 'defaultValue' in field:
+                                    mode_value = field['defaultValue']
+                            self._attr_preset_modes_mapping_set[workOption['name']] = {
+                                'workMode': workOption['value'],
+                                'modeValue': mode_value,
+                            }
             elif cap['type'] == 'devices.capabilities.property' and cap['instance'] == 'sensorTemperature':
                 pass #do nothing as this is handled within 'current_temperature' property
             else:
@@ -165,12 +167,18 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
         """Return the preset_mode of the entity."""
         #_LOGGER.debug("%s - %s: preset_mode", self._api_id, self._identifier)  
         value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.work_mode', 'workMode')
-        v=str(value['workMode'])+':'+str(value['modeValue'])
-        v=self._attr_preset_modes_mapping.get(v,STATE_UNKNOWN)
-        if v == STATE_UNKNOWN:
-            _LOGGER.warning("%s - %s: preset_mode: invalid value: %s", self._api_id, self._identifier, value)
-            _LOGGER.debug("%s - %s: preset_mode: valid are: %s", self._api_id, self._identifier, self._attr_preset_modes_mapping)
-        return v 
+        if value is None:
+            return None
+        work_mode = value.get("workMode")
+        if work_mode is None:
+            return None
+
+        # Find the preset mode name that matches this workMode value
+        for preset_name, preset_value in self._attr_preset_modes_mapping.items():
+            if preset_value == work_mode:
+                return preset_name
+
+        return None
 
     async def async_set_preset_mode(self, preset_mode) -> None:
         """Set new target preset mode."""
@@ -189,14 +197,37 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
     def temperature_unit(self) -> str:
         """Return the temperature unit of the entity."""
         value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.temperature_setting', 'targetTemperature')
-        return UnitOfTemperature[value.get('unit', 'CELSIUS').upper()]
+        if value is not None:
+            return UnitOfTemperature[value.get("unit", "CELSIUS").upper()]
+
+        value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.temperature_setting', 'sliderTemperature')
+        if value is not None:
+            return UnitOfTemperature[value.get("unit", "CELSIUS").upper()]
+
+        return UnitOfTemperature.CELSIUS
 
     @property
     def target_temperature(self) -> float | None:
         """Return the target temperature of the entity."""
-        #_LOGGER.debug("%s - %s: target_temperature", self._api_id, self._identifier)
-        value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.temperature_setting', 'targetTemperature')
-        return value.get('targetTemperature', 0)
+        # First try to get the temperature from the current preset mode
+        preset_mode = self.preset_mode
+        _LOGGER.debug("%s - %s: target_temperature: current preset mode: %s", self._api_id, self._identifier, preset_mode)
+
+        if preset_mode and preset_mode in self._attr_preset_modes_mapping_set:
+            mode_value = self._attr_preset_modes_mapping_set[preset_mode].get("modeValue")
+            _LOGGER.debug("%s - %s: target_temperature: mode value: %s", self._api_id, self._identifier, mode_value)
+            if mode_value is not None and mode_value != 0:
+                return float(mode_value)
+
+        # If no preset mode temperature, try to get it from the slider
+        value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.temperature_setting', 'sliderTemperature')
+        _LOGGER.debug("%s - %s: target_temperature: slider value: %s", self._api_id, self._identifier, value)
+        if value is None:
+            return None
+        temperature = value.get("targetTemperature")
+        if temperature is None:
+            return None
+        return float(temperature)
 
     async def async_set_temperature(self, **kwargs) -> None:
         """Set new target temperature."""        
@@ -221,9 +252,11 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
         """Return the current temperature of the entity."""
         #_LOGGER.debug("%s - %s: current_temperature", self._api_id, self._identifier)  
         value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.property', 'sensorTemperature')
+        if value is None or value == "":
+            return None
         if self.temperature_unit == UnitOfTemperature.CELSIUS:
             #value seems to be always Fahrenheit - calculate to °C if necessary
-            value = (value - 32) * 5 / 9
-        return value
+            value = (float(value) - 32) * 5 / 9
+        return float(value)
 
 
