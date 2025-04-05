@@ -116,8 +116,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         if all_ok:
             # Remove entities from the entity registry
-            entity_registry = hass.helpers.entity_registry.async_get(hass)
-            entities = async_entries_for_config_entry(entity_registry, entry.entry_id)
+            entity_registry = hass.helpers.entity_registry.async_get()
+            entities = hass.helpers.entity_registry.async_entries_for_config_entry(entity_registry, entry.entry_id)
             for entity in entities:
                 _LOGGER.debug("%s - async_unload_entry: removing entity: %s", entry.entry_id, entity.entity_id)
                 entity_registry.async_remove(entity.entity_id)
