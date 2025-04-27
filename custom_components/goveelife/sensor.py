@@ -19,8 +19,14 @@ from homeassistant.const import (
     STATE_UNKNOWN,
     CONF_STATE,
 )
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
 
 from .entities import GoveeLifePlatformEntity
+from .utils import GoveeAPI_GetCachedStateValue
 
 from .const import (
     DOMAIN,
@@ -82,7 +88,11 @@ class GoveeLifeSensor(GoveeLifePlatformEntity):
 
     def _init_platform_specific(self, **kwargs):
         """Platform specific init actions"""
-        self._state_class = None
+        capabilities = kwargs.get('cap')
+        self._capability_name = capabilities.get('instance') 
+        self.uniqueid = self._identifier + '_' + self._entity_id + '_' + self._capability_name
+        self._name = self._capability_name
+        self._state_class = SensorStateClass.MEASUREMENT
 
     @property
     def state_class(self) -> SensorStateClass | None:
@@ -102,4 +112,12 @@ class GoveeLifeSensor(GoveeLifePlatformEntity):
         d=self._device_cfg.get('device')
         self.hass.data[DOMAIN][self._entry_id][CONF_STATE][d]
         self.async_write_ha_state()
+ 
+    @property
+    def state(self) -> str | None:
+        """Return the current state of the entity."""
+        value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.property', self._capability_name)
+        _LOGGER.debug("%s - %s: state value: %s", self._api_id, self._identifier, value)
+        return value
+        
 
