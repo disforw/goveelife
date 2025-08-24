@@ -9,6 +9,7 @@ This custom Home Assistant integration is a work in progress that uses the newly
 * Ice Maker - power switch
 * Aroma Diffuser - power switch
 * Socket - power switch
+* Tea Kettles - Climate, power switch
 
 ## Installing
 You can install this integration with HACS or manually.
