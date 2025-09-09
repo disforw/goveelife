@@ -275,3 +275,66 @@ def GoveeAPI_GetCachedStateValue(hass: HomeAssistant, entry_id: str, device_id, 
         _LOGGER.error("%s - async_GoveeAPI_GetCachedStateValue: Failed: %s (%s.%s)", entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return None
 
+async def async_GoveeAPI_GetDynamicScenes(hass: HomeAssistant, entry_id: str, device_cfg) -> list:
+    """Async: Get dynamic scenes for a device via Govee API"""
+    try:
+        _LOGGER.debug("%s - async_GoveeAPI_GetDynamicScenes: preparing values", entry_id)       
+        json_str = json.dumps({
+            "requestId": str(uuid.uuid4()),
+            "payload": {
+                "sku": str(device_cfg.get('sku')),
+                "device": str(device_cfg.get('device'))
+            }
+        })
+        
+        r = await async_GoveeAPI_POSTRequest(hass, entry_id, 'device/scenes', json_str)
+        
+        if r and r.get('code') == 200:
+            payload = r.get('payload', {})
+            capabilities = payload.get('capabilities', [])
+            
+            for cap in capabilities:
+                if (cap.get('type') == 'devices.capabilities.dynamic_scene' and 
+                    cap.get('instance') == 'lightScene'):
+                    options = cap.get('parameters', {}).get('options', [])
+                    _LOGGER.debug("%s - async_GoveeAPI_GetDynamicScenes: found %d dynamic scenes", entry_id, len(options))
+                    return options
+        
+        _LOGGER.debug("%s - async_GoveeAPI_GetDynamicScenes: no dynamic scenes found", entry_id)
+        return []
+        
+    except Exception as e:
+        _LOGGER.error("%s - async_GoveeAPI_GetDynamicScenes: Failed: %s (%s.%s)", entry_id, str(e), e.__class__.__module__, type(e).__name__)
+        return []
+
+async def async_GoveeAPI_GetDynamicDIYScenes(hass: HomeAssistant, entry_id: str, device_cfg) -> list:
+    """Async: Get dynamic DIY scenes for a device via Govee API"""
+    try:
+        _LOGGER.debug("%s - async_GoveeAPI_GetDynamicDIYScenes: preparing values", entry_id)       
+        json_str = json.dumps({
+            "requestId": str(uuid.uuid4()),
+            "payload": {
+                "sku": str(device_cfg.get('sku')),
+                "device": str(device_cfg.get('device'))
+            }
+        })
+        
+        r = await async_GoveeAPI_POSTRequest(hass, entry_id, 'device/diy-scenes', json_str)
+        
+        if r and r.get('code') == 200:
+            payload = r.get('payload', {})
+            capabilities = payload.get('capabilities', [])
+            
+            for cap in capabilities:
+                if (cap.get('type') == 'devices.capabilities.diy_color_setting' and 
+                    cap.get('instance') == 'diyScene'):
+                    options = cap.get('parameters', {}).get('options', [])
+                    _LOGGER.debug("%s - async_GoveeAPI_GetDynamicDIYScenes: found %d DIY scenes", entry_id, len(options))
+                    return options
+        
+        _LOGGER.debug("%s - async_GoveeAPI_GetDynamicDIYScenes: no DIY scenes found", entry_id)
+        return []
+        
+    except Exception as e:
+        _LOGGER.error("%s - async_GoveeAPI_GetDynamicDIYScenes: Failed: %s (%s.%s)", entry_id, str(e), e.__class__.__module__, type(e).__name__)
+        return []
