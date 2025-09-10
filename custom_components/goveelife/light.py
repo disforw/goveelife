@@ -183,13 +183,11 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
         return RGBint
 
     @property
-    def supported_features(self) -> int:
+    def supported_features(self) -> LightEntityFeature:
         """Flag supported features."""
-        features = 0
-        if self._support_scenes and (self._available_scenes or self._dynamic_scenes):
-            features |= LightEntityFeature.EFFECT
-            _LOGGER.debug("%s - %s: Enabling EFFECT feature", self._api_id, self._identifier)
-        return features
+        if self._support_scenes or self._has_dynamic_scenes:
+            return LightEntityFeature.EFFECT
+        return LightEntityFeature(0) 
 
     @property
     def supported_color_modes(self) -> set[ColorMode] | set[str] | None:
