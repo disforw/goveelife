@@ -74,7 +74,8 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
 
         for cap in capabilities:
             if cap['type'] == 'devices.capabilities.on_off':
-                self._attr_supported_features |= FanEntityFeature.TURN_ON
+                # Added TURN_OFF so HA knows this entity supports turning off.
+                self._attr_supported_features |= FanEntityFeature.TURN_ON | FanEntityFeature.TURN_OFF
                 for option in cap['parameters']['options']:
                     if option['name'] == 'on':
                         self._state_mapping[option['value']] = STATE_ON
