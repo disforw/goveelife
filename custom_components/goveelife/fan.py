@@ -66,8 +66,9 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
     _attr_preset_modes = []
     _attr_preset_modes_mapping = {}
     _attr_preset_modes_mapping_set = {}
+    _attr_supported_features = 0
 
-    def _init_platform_specific(self, **kwargs):
+    def _init_platform_specific(self, **kwargs) -> None:
         """Platform specific initialization actions."""
         _LOGGER.debug("%s - %s: _init_platform_specific", self._api_id, self._identifier)
         capabilities = self._device_cfg.get('capabilities', [])
@@ -142,7 +143,7 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                 if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
                     self.async_write_ha_state()
             else:
-                _LOGGER.debug("%s - %s: async_turn_on: device already off", self._api_id, self._identifier)
+                _LOGGER.debug("%s - %s: async_turn_off: device already off", self._api_id, self._identifier)
         except Exception as e:
             _LOGGER.error("%s - %s: async_turn_off failed: %s (%s.%s)", self._api_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
 
