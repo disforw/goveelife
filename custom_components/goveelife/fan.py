@@ -152,14 +152,11 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
         """Return the preset_mode of the entity."""
         value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.work_mode', 'workMode')
         v = {"workMode": value['workMode'], "modeValue": value['modeValue']}
-        key_list = [key for key, val in self._attr_preset_modes_mapping_set.items() if val == v]
 
-        if key_list:
-            return key_list[0]
-        else:
-            _LOGGER.warning("%s - %s: preset_mode: invalid value: %s", self._api_id, self._identifier, v)
-            _LOGGER.debug("%s - %s: preset_mode: valid are: %s", self._api_id, self._identifier, self._attr_preset_modes_mapping_set)
-            return STATE_UNKNOWN
+        return next(
+            (key for key, val in self._attr_preset_modes_mapping_set.items() if val == v),
+            STATE_UNKNOWN,
+        )
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set new target preset mode."""
