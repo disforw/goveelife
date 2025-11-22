@@ -98,6 +98,11 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                                 for gearOption in valueOption.get('options', []):
                                     self._attr_preset_modes.append(gearOption['name'])
                                     self._attr_preset_modes_mapping_set[gearOption['name']] = {"workMode": self._attr_preset_modes_mapping[valueOption['name']], "modeValue": gearOption['value']}
+                            elif valueOption['name'] == 'FanSpeed':
+                                for speedOption in valueOption.get('options', []):
+                                    speedPreset = f'Speed: {speedOption['value']}'
+                                    self._attr_preset_modes.append(speedPreset)
+                                    self._attr_preset_modes_mapping_set[speedPreset] = {"workMode": self._attr_preset_modes_mapping[valueOption['name']], "modeValue": speedOption['value']}
                             elif valueOption['name'] != 'Custom':
                                 self._attr_preset_modes.append(valueOption['name'])
                                 self._attr_preset_modes_mapping_set[valueOption['name']] = {"workMode": self._attr_preset_modes_mapping[valueOption['name']], "modeValue": valueOption['value']}
