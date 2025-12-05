@@ -120,6 +120,9 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                                         'value': gearOption['value']
                                     })
                                 if manual_work_mode is not None:
+                                    # Add Off preset (tied to device being off)
+                                    self._attr_preset_modes.append('Off')
+                                    
                                     # Add Manual preset
                                     self._attr_preset_modes.append('Manual')
                                     # Manual defaults to High (last gear mode in the ordered list)
@@ -205,6 +208,10 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
     @property
     def preset_mode(self) -> str | None:
         """Return the preset_mode of the entity."""
+        # If device is off, return 'Off' preset
+        if not self.is_on:
+            return 'Off'
+        
         value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.work_mode', 'workMode')
         if not value:
             return STATE_UNKNOWN
@@ -236,13 +243,19 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
         work_mode = value.get('workMode')
         mode_value = value.get('modeValue')
         
-        # Only return percentage if in manual mode
+        # Return percentage if in manual mode
         if work_mode == self._manual_work_mode:
             # Get the speed name from modeValue
             speed_name = self._speed_mapping.get(mode_value)
             if speed_name is not None and self._ordered_named_fan_speeds:
                 # Convert speed name to percentage using ordered list
                 return ordered_list_item_to_percentage(self._ordered_named_fan_speeds, speed_name)
+        else:
+            # For non-manual modes (like Sleep), return a representative percentage
+            # Sleep mode should show 16% (half of Low's 33%) so slider doesn't show 'Off'
+            preset_mode = self.preset_mode
+            if preset_mode == 'Sleep':
+                return 16
         
         return None
 
@@ -299,6 +312,11 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set new target preset mode."""
+        # Handle 'Off' preset by turning off the device
+        if preset_mode == 'Off':
+            await self.async_turn_off()
+            return
+        
         state_capability = {
             "type": "devices.capabilities.work_mode",
             "instance": "workMode",
