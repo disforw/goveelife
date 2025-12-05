@@ -273,11 +273,6 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
         
         return None
 
-    @property
-    def speed_count(self) -> int:
-        """Return the number of speeds the fan supports."""
-        return len(self._ordered_named_fan_speeds)
-
     async def async_set_percentage(self, percentage: int) -> None:
         """Set the speed percentage of the fan."""
         if percentage == 0:
