@@ -106,8 +106,10 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                         for workOption in capFieldWork.get('options', []):
                             self._attr_preset_modes_mapping[workOption['name']] = workOption['value']
                             # Track Manual mode workMode value (typically 1)
+                            # Common names for manual mode: 'Manual', 'gearMode'
                             if workOption['name'].lower() in ['manual', 'gearmode']:
                                 manual_work_mode = workOption['value']
+                                _LOGGER.debug("%s - %s: Found manual mode: %s = %s", self._api_id, self._identifier, workOption['name'], manual_work_mode)
                     elif capFieldWork['fieldName'] == 'modeValue':
                         for valueOption in capFieldWork.get('options', []):
                             if valueOption['name'] == 'gearMode':
@@ -120,12 +122,15 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                                 if manual_work_mode is not None:
                                     # Add Manual preset
                                     self._attr_preset_modes.append('Manual')
-                                    # Manual defaults to High (last gear mode)
+                                    # Manual defaults to High (last gear mode in the ordered list)
+                                    # Note: Assumes gear_modes are ordered from low to high (e.g., Low, Medium, High)
                                     if gear_modes:
                                         self._attr_preset_modes_mapping_set['Manual'] = {
                                             "workMode": manual_work_mode, 
                                             "modeValue": gear_modes[-1]['value']
                                         }
+                                        _LOGGER.debug("%s - %s: Manual preset defaults to %s (modeValue %s)", 
+                                                     self._api_id, self._identifier, gear_modes[-1]['name'], gear_modes[-1]['value'])
                             elif valueOption['name'] != 'Custom':
                                 # Add other modes like Sleep as presets
                                 # The workMode value should come from the mapping we built earlier
@@ -258,7 +263,15 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
         
         # Turn on the device first if it's off
         if not self.is_on:
-            await self.async_turn_on()
+            _LOGGER.debug("%s - %s: async_set_percentage: Turning on device first", self._api_id, self._identifier)
+            try:
+                await self.async_turn_on()
+                # Give the device a moment to turn on
+                await asyncio.sleep(0.5)
+            except Exception as e:
+                _LOGGER.error("%s - %s: async_set_percentage: Failed to turn on device: %s (%s.%s)", 
+                             self._api_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
+                return
         
         # Convert percentage to speed name using ordered list
         speed_name = percentage_to_ordered_list_item(self._ordered_named_fan_speeds, percentage)
