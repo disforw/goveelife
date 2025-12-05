@@ -356,15 +356,15 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                                  self._api_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
                     return
             
-            # Map percentage to speed level
+            # Map percentage to speed level (round to nearest)
             # 16% = Sleep (handled separately, shouldn't be called via percentage)
-            # 33% = Low (modeValue 1)
-            # 66% = Medium (modeValue 2)
-            # 100% = High (modeValue 3)
-            if percentage <= 33:
+            # 33% = Low (modeValue 1) - nearest for 1-49%
+            # 66% = Medium (modeValue 2) - nearest for 50-82%
+            # 100% = High (modeValue 3) - nearest for 83-100%
+            if percentage < 50:
                 mode_value = 1  # Low
                 speed_name = "Low"
-            elif percentage <= 66:
+            elif percentage < 83:
                 mode_value = 2  # Medium
                 speed_name = "Medium"
             else:
