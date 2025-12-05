@@ -128,16 +128,22 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                                         }
                             elif valueOption['name'] != 'Custom':
                                 # Add other modes like Sleep as presets
-                                self._attr_preset_modes.append(valueOption['name'])
-                                self._attr_preset_modes_mapping_set[valueOption['name']] = {
-                                    "workMode": self._attr_preset_modes_mapping.get(valueOption['name'], valueOption.get('value', 0)), 
-                                    "modeValue": valueOption.get('value', 0)
-                                }
+                                # The workMode value should come from the mapping we built earlier
+                                work_mode_value = self._attr_preset_modes_mapping.get(valueOption['name'])
+                                if work_mode_value is not None:
+                                    self._attr_preset_modes.append(valueOption['name'])
+                                    self._attr_preset_modes_mapping_set[valueOption['name']] = {
+                                        "workMode": work_mode_value, 
+                                        "modeValue": valueOption.get('value', 0)
+                                    }
+                                else:
+                                    _LOGGER.warning("%s - %s: _init_platform_specific: Could not find workMode for %s", self._api_id, self._identifier, valueOption['name'])
                 
                 # Map gear modes to ordered list for percentage conversion
                 if gear_modes:
-                    # Store manual_work_mode for later use
-                    self._manual_work_mode = manual_work_mode
+                    # Store manual_work_mode for later use (only if found)
+                    if manual_work_mode is not None:
+                        self._manual_work_mode = manual_work_mode
                     # Create ordered list of speed names and mappings
                     for gear in gear_modes:
                         self._ordered_named_fan_speeds.append(gear['name'])
@@ -250,6 +256,10 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
             _LOGGER.error("%s - %s: async_set_percentage: No fan speeds configured", self._api_id, self._identifier)
             return
         
+        # Turn on the device first if it's off
+        if not self.is_on:
+            await self.async_turn_on()
+        
         # Convert percentage to speed name using ordered list
         speed_name = percentage_to_ordered_list_item(self._ordered_named_fan_speeds, percentage)
         mode_value = self._speed_name_to_mode_value.get(speed_name)
@@ -272,11 +282,7 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                      self._api_id, self._identifier, percentage, speed_name, mode_value)
         
         if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
-            if not self.is_on:
-                # Turn on the device if it's off
-                await self.async_turn_on()
-            else:
-                self.async_write_ha_state()
+            self.async_write_ha_state()
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set new target preset mode."""
