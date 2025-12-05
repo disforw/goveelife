@@ -84,12 +84,33 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
     _manual_work_mode = 1  # Default Manual workMode value
     _sleep_work_mode = None  # Sleep mode workMode value (typically 5)
     _attr_supported_features = 0
+    _device_sku = None  # Device SKU for model-specific handling
+    
+    # H7120-specific: workMode directly maps to speed/mode
+    _h7120_work_mode_mapping = {
+        1: ('Manual', 33),   # Low
+        2: ('Manual', 66),   # Medium
+        3: ('Manual', 100),  # High
+        5: ('Sleep', 16)     # Sleep
+    }
+    
+    # Reverse mapping for H7120: percentage to workMode
+    _h7120_percentage_to_work_mode = {
+        33: 1,   # Low
+        66: 2,   # Medium
+        100: 3,  # High
+        16: 5    # Sleep
+    }
 
     def _init_platform_specific(self, **kwargs) -> None:
         """Platform specific initialization actions."""
         _LOGGER.debug("%s - %s: _init_platform_specific", self._api_id, self._identifier)
         capabilities = self._device_cfg.get('capabilities', [])
         has_power_control = False
+        
+        # Get device SKU for model-specific handling
+        self._device_sku = self._device_cfg.get('sku', None)
+        _LOGGER.debug("%s - %s: Device SKU: %s", self._api_id, self._identifier, self._device_sku)
 
         for cap in capabilities:
             if cap['type'] == 'devices.capabilities.on_off':
@@ -245,6 +266,16 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
             _LOGGER.warning("%s - %s: preset_mode: workMode is None in value: %s", self._api_id, self._identifier, value)
             return STATE_UNKNOWN
         
+        # H7120-specific: workMode directly maps to preset/speed
+        if self._device_sku == 'H7120':
+            mapping = self._h7120_work_mode_mapping.get(work_mode)
+            if mapping:
+                preset, _ = mapping
+                return preset
+            _LOGGER.warning("%s - %s: preset_mode: Unknown workMode %s for H7120", self._api_id, self._identifier, work_mode)
+            return STATE_UNKNOWN
+        
+        # Standard logic for other models
         # Check if we're in manual mode (workMode == 1 or manual_work_mode)
         if work_mode == self._manual_work_mode:
             return 'Manual'
@@ -279,6 +310,16 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
             _LOGGER.warning("%s - %s: percentage: workMode is None in value: %s", self._api_id, self._identifier, value)
             return None
         
+        # H7120-specific: workMode directly maps to percentage
+        if self._device_sku == 'H7120':
+            mapping = self._h7120_work_mode_mapping.get(work_mode)
+            if mapping:
+                _, percentage = mapping
+                return percentage
+            _LOGGER.warning("%s - %s: percentage: Unknown workMode %s for H7120", self._api_id, self._identifier, work_mode)
+            return None
+        
+        # Standard logic for other models
         # Return percentage if in manual mode
         if work_mode == self._manual_work_mode:
             # Get the speed name from modeValue
@@ -301,6 +342,42 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
             await self.async_turn_off()
             return
         
+        # H7120-specific: Map percentage directly to workMode
+        if self._device_sku == 'H7120':
+            # Turn on the device first if it's off
+            if not self.is_on:
+                _LOGGER.debug("%s - %s: async_set_percentage: Turning on device first", self._api_id, self._identifier)
+                try:
+                    await self.async_turn_on()
+                    # Give the device a moment to turn on
+                    await asyncio.sleep(0.5)
+                except Exception as e:
+                    _LOGGER.error("%s - %s: async_set_percentage: Failed to turn on device: %s (%s.%s)", 
+                                 self._api_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
+                    return
+            
+            # Find closest matching percentage
+            closest_percentage = min(self._h7120_percentage_to_work_mode.keys(), 
+                                   key=lambda x: abs(x - percentage))
+            work_mode = self._h7120_percentage_to_work_mode[closest_percentage]
+            
+            state_capability = {
+                "type": "devices.capabilities.work_mode",
+                "instance": "workMode",
+                "value": {
+                    "workMode": work_mode,
+                    "modeValue": 0  # Always 0 for H7120
+                }
+            }
+            
+            _LOGGER.debug("%s - %s: async_set_percentage (H7120): Setting speed to %s%% (workMode %s)", 
+                         self._api_id, self._identifier, percentage, work_mode)
+            
+            if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
+                self.async_write_ha_state()
+            return
+        
+        # Standard logic for other models
         if not self._ordered_named_fan_speeds:
             _LOGGER.error("%s - %s: async_set_percentage: No fan speeds configured", self._api_id, self._identifier)
             return
@@ -348,6 +425,37 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
             await self.async_turn_off()
             return
         
+        # H7120-specific: Handle Sleep mode
+        if self._device_sku == 'H7120' and preset_mode == 'Sleep':
+            state_capability = {
+                "type": "devices.capabilities.work_mode",
+                "instance": "workMode",
+                "value": {
+                    "workMode": 5,  # Sleep mode
+                    "modeValue": 0  # Always 0 for H7120
+                }
+            }
+            _LOGGER.debug("%s - %s: async_set_preset_mode (H7120): Setting to Sleep mode", self._api_id, self._identifier)
+            if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
+                self.async_write_ha_state()
+            return
+        
+        # H7120-specific: Handle Manual mode (defaults to High)
+        if self._device_sku == 'H7120' and preset_mode == 'Manual':
+            state_capability = {
+                "type": "devices.capabilities.work_mode",
+                "instance": "workMode",
+                "value": {
+                    "workMode": 3,  # High
+                    "modeValue": 0  # Always 0 for H7120
+                }
+            }
+            _LOGGER.debug("%s - %s: async_set_preset_mode (H7120): Setting to Manual/High mode", self._api_id, self._identifier)
+            if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
+                self.async_write_ha_state()
+            return
+        
+        # Standard logic for other models
         state_capability = {
             "type": "devices.capabilities.work_mode",
             "instance": "workMode",
