@@ -65,6 +65,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
     """Fan class for Govee Life integration."""
 
+    # Sleep mode percentage - half of Low speed (33% / 2 = 16%)
+    # This ensures Sleep mode shows on the speed slider and doesn't appear as 'Off'
+    SLEEP_MODE_PERCENTAGE = 16
+    
     _state_mapping = {}
     _state_mapping_set = {}
     _attr_preset_modes = []
@@ -74,17 +78,20 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
     _speed_mapping = {}  # Maps modeValue to speed name
     _speed_name_to_mode_value = {}  # Maps speed name to modeValue
     _manual_work_mode = 1  # Default Manual workMode value
+    _sleep_work_mode = None  # Sleep mode workMode value (typically 5)
     _attr_supported_features = 0
 
     def _init_platform_specific(self, **kwargs) -> None:
         """Platform specific initialization actions."""
         _LOGGER.debug("%s - %s: _init_platform_specific", self._api_id, self._identifier)
         capabilities = self._device_cfg.get('capabilities', [])
+        has_power_control = False
 
         for cap in capabilities:
             if cap['type'] == 'devices.capabilities.on_off':
                 # Added TURN_OFF so HA knows this entity supports turning off.
                 self._attr_supported_features |= FanEntityFeature.TURN_ON | FanEntityFeature.TURN_OFF
+                has_power_control = True
                 for option in cap['parameters']['options']:
                     if option['name'] == 'on':
                         self._state_mapping[option['value']] = STATE_ON
@@ -120,8 +127,9 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                                         'value': gearOption['value']
                                     })
                                 if manual_work_mode is not None:
-                                    # Add Off preset (tied to device being off)
-                                    self._attr_preset_modes.append('Off')
+                                    # Add Off preset only if device has power control
+                                    if has_power_control:
+                                        self._attr_preset_modes.append('Off')
                                     
                                     # Add Manual preset
                                     self._attr_preset_modes.append('Manual')
@@ -144,6 +152,10 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                                         "workMode": work_mode_value, 
                                         "modeValue": valueOption.get('value', 0)
                                     }
+                                    # Track Sleep mode workMode for percentage calculation
+                                    if valueOption['name'].lower() == 'sleep':
+                                        self._sleep_work_mode = work_mode_value
+                                        _LOGGER.debug("%s - %s: Found sleep mode: workMode = %s", self._api_id, self._identifier, work_mode_value)
                                 else:
                                     _LOGGER.warning("%s - %s: _init_platform_specific: Could not find workMode for %s", self._api_id, self._identifier, valueOption['name'])
                 
@@ -250,12 +262,10 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
             if speed_name is not None and self._ordered_named_fan_speeds:
                 # Convert speed name to percentage using ordered list
                 return ordered_list_item_to_percentage(self._ordered_named_fan_speeds, speed_name)
-        else:
-            # For non-manual modes (like Sleep), return a representative percentage
-            # Sleep mode should show 16% (half of Low's 33%) so slider doesn't show 'Off'
-            preset_mode = self.preset_mode
-            if preset_mode == 'Sleep':
-                return 16
+        elif self._sleep_work_mode is not None and work_mode == self._sleep_work_mode:
+            # Sleep mode shows a low percentage so slider doesn't show 'Off'
+            # Using half of Low speed (33% / 2 = 16%)
+            return self.SLEEP_MODE_PERCENTAGE
         
         return None
 
