@@ -230,10 +230,20 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
         
         value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.work_mode', 'workMode')
         if not value:
+            _LOGGER.debug("%s - %s: preset_mode: No work_mode value from cache", self._api_id, self._identifier)
+            return STATE_UNKNOWN
+        
+        # Handle case where value is not a dict
+        if not isinstance(value, dict):
+            _LOGGER.warning("%s - %s: preset_mode: Unexpected value type: %s, value: %s", self._api_id, self._identifier, type(value), value)
             return STATE_UNKNOWN
         
         work_mode = value.get('workMode')
         mode_value = value.get('modeValue')
+        
+        if work_mode is None:
+            _LOGGER.warning("%s - %s: preset_mode: workMode is None in value: %s", self._api_id, self._identifier, value)
+            return STATE_UNKNOWN
         
         # Check if we're in manual mode (workMode == 1 or manual_work_mode)
         if work_mode == self._manual_work_mode:
@@ -254,10 +264,20 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
         
         value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.work_mode', 'workMode')
         if not value:
+            _LOGGER.debug("%s - %s: percentage: No work_mode value from cache", self._api_id, self._identifier)
+            return None
+        
+        # Handle case where value is not a dict
+        if not isinstance(value, dict):
+            _LOGGER.warning("%s - %s: percentage: Unexpected value type: %s, value: %s", self._api_id, self._identifier, type(value), value)
             return None
         
         work_mode = value.get('workMode')
         mode_value = value.get('modeValue')
+        
+        if work_mode is None:
+            _LOGGER.warning("%s - %s: percentage: workMode is None in value: %s", self._api_id, self._identifier, value)
+            return None
         
         # Return percentage if in manual mode
         if work_mode == self._manual_work_mode:
@@ -266,6 +286,8 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
             if speed_name is not None and self._ordered_named_fan_speeds:
                 # Convert speed name to percentage using ordered list
                 return ordered_list_item_to_percentage(self._ordered_named_fan_speeds, speed_name)
+            else:
+                _LOGGER.debug("%s - %s: percentage: Could not map modeValue %s to speed name", self._api_id, self._identifier, mode_value)
         elif self._sleep_work_mode is not None and work_mode == self._sleep_work_mode:
             # Sleep mode shows a low percentage so slider doesn't show 'Off'
             # Using half of Low speed (33% / 2 = 16%)
