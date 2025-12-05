@@ -2,7 +2,6 @@
 
 import logging
 import asyncio
-import math
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
@@ -14,8 +13,8 @@ from homeassistant.const import (
     STATE_UNKNOWN,
 )
 from homeassistant.util.percentage import (
-    percentage_to_ranged_value,
-    ranged_value_to_percentage,
+    ordered_list_item_to_percentage,
+    percentage_to_ordered_list_item,
 )
 
 from .entities import GoveeLifePlatformEntity
@@ -71,9 +70,9 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
     _attr_preset_modes = []
     _attr_preset_modes_mapping = {}
     _attr_preset_modes_mapping_set = {}
-    _speed_range = (1, 3)  # Default range, will be updated based on capabilities
-    _speed_mapping = {}  # Maps modeValue to speed level (1-indexed)
-    _speed_mapping_reverse = {}  # Maps speed level to modeValue
+    _ordered_named_fan_speeds = []  # Ordered list of speed names (e.g., ['Low', 'Medium', 'High'])
+    _speed_mapping = {}  # Maps modeValue to speed name
+    _speed_name_to_mode_value = {}  # Maps speed name to modeValue
     _manual_work_mode = 1  # Default Manual workMode value
     _attr_supported_features = 0
 
@@ -135,18 +134,17 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                                     "modeValue": valueOption.get('value', 0)
                                 }
                 
-                # Map gear modes to speed levels
+                # Map gear modes to ordered list for percentage conversion
                 if gear_modes:
-                    num_speeds = len(gear_modes)
-                    self._speed_range = (1, num_speeds)
                     # Store manual_work_mode for later use
                     self._manual_work_mode = manual_work_mode
-                    # Create bidirectional mapping between speed level and modeValue
-                    for idx, gear in enumerate(gear_modes):
-                        speed_level = idx + 1  # 1-indexed speed levels
-                        self._speed_mapping[gear['value']] = speed_level
-                        self._speed_mapping_reverse[speed_level] = gear['value']
-                    _LOGGER.debug("%s - %s: Speed range: %s, Speed mapping: %s", self._api_id, self._identifier, self._speed_range, self._speed_mapping)
+                    # Create ordered list of speed names and mappings
+                    for gear in gear_modes:
+                        self._ordered_named_fan_speeds.append(gear['name'])
+                        self._speed_mapping[gear['value']] = gear['name']
+                        self._speed_name_to_mode_value[gear['name']] = gear['value']
+                    _LOGGER.debug("%s - %s: Ordered fan speeds: %s", self._api_id, self._identifier, self._ordered_named_fan_speeds)
+                    _LOGGER.debug("%s - %s: Speed mapping: %s", self._api_id, self._identifier, self._speed_mapping)
 
     @property
     def state(self) -> str | None:
@@ -229,19 +227,18 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
         
         # Only return percentage if in manual mode
         if work_mode == self._manual_work_mode:
-            # Get the speed level from modeValue
-            speed_level = self._speed_mapping.get(mode_value)
-            if speed_level is not None:
-                # Convert speed level to percentage
-                percentage = ranged_value_to_percentage(self._speed_range, speed_level)
-                return percentage
+            # Get the speed name from modeValue
+            speed_name = self._speed_mapping.get(mode_value)
+            if speed_name is not None and self._ordered_named_fan_speeds:
+                # Convert speed name to percentage using ordered list
+                return ordered_list_item_to_percentage(self._ordered_named_fan_speeds, speed_name)
         
         return None
 
     @property
     def speed_count(self) -> int:
         """Return the number of speeds the fan supports."""
-        return self._speed_range[1]
+        return len(self._ordered_named_fan_speeds)
 
     async def async_set_percentage(self, percentage: int) -> None:
         """Set the speed percentage of the fan."""
@@ -249,12 +246,16 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
             await self.async_turn_off()
             return
         
-        # Convert percentage to speed level
-        speed_level = math.ceil(percentage_to_ranged_value(self._speed_range, percentage))
-        mode_value = self._speed_mapping_reverse.get(speed_level)
+        if not self._ordered_named_fan_speeds:
+            _LOGGER.error("%s - %s: async_set_percentage: No fan speeds configured", self._api_id, self._identifier)
+            return
+        
+        # Convert percentage to speed name using ordered list
+        speed_name = percentage_to_ordered_list_item(self._ordered_named_fan_speeds, percentage)
+        mode_value = self._speed_name_to_mode_value.get(speed_name)
         
         if mode_value is None:
-            _LOGGER.error("%s - %s: async_set_percentage: Could not find modeValue for speed level %s", self._api_id, self._identifier, speed_level)
+            _LOGGER.error("%s - %s: async_set_percentage: Could not find modeValue for speed %s", self._api_id, self._identifier, speed_name)
             return
         
         # Set to manual mode with the specified speed
@@ -267,8 +268,8 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
             }
         }
         
-        _LOGGER.debug("%s - %s: async_set_percentage: Setting speed to %s%% (level %s, modeValue %s)", 
-                     self._api_id, self._identifier, percentage, speed_level, mode_value)
+        _LOGGER.debug("%s - %s: async_set_percentage: Setting speed to %s%% (%s, modeValue %s)", 
+                     self._api_id, self._identifier, percentage, speed_name, mode_value)
         
         if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
             if not self.is_on:
