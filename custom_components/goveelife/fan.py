@@ -69,6 +69,10 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
     # This ensures Sleep mode shows on the speed slider and doesn't appear as 'Off'
     SLEEP_MODE_PERCENTAGE = 16
     
+    # Use 1% step to ensure slider display instead of buttons
+    # This accommodates Sleep (16%), Low (33%), Medium (66%), and High (100%)
+    _attr_percentage_step = 1.0
+    
     _state_mapping = {}
     _state_mapping_set = {}
     _attr_preset_modes = []
