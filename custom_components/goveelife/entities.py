@@ -35,15 +35,16 @@ from .utils import async_GoveeAPI_GetDeviceState
 
 _LOGGER: Final = logging.getLogger(__name__)
 
+
 class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
     """Base class for Govee Life integration."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry, coordinator, device_cfg, **kwargs) -> None:
         """Initialize the entity."""
         try:
-            platform = kwargs.get('platform', 'entities')
+            platform = kwargs.get("platform", "entities")
             self._api_id = str(entry.data.get(CONF_FRIENDLY_NAME, DEFAULT_NAME))
-            self._identifier = (str(device_cfg.get('device')).replace(':', '') + '_' + platform).lower()
+            self._identifier = (str(device_cfg.get("device")).replace(":", "") + "_" + platform).lower()
 
             _LOGGER.debug("%s - %s: __init__", self._api_id, self._identifier)
             self._device_cfg = device_cfg
@@ -51,36 +52,42 @@ class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
             self._entry_id = self._entry.entry_id
             self.hass = hass
 
-            self._name = self._device_cfg.get('deviceName')
+            self._name = self._device_cfg.get("deviceName")
 
-            #self._icon = None
-            #self._device_class = None
-            #self._unit_of_measurement = None
-            #self._entity_category = None
+            # self._icon = None
+            # self._device_class = None
+            # self._unit_of_measurement = None
+            # self._entity_category = None
 
             self._entity_id = self._name.lower()
-            self.uniqueid = self._identifier + '_' + self._entity_id
+            self.uniqueid = self._identifier + "_" + self._entity_id
 
             self._attributes = {}
-            #self._attributes['description'] = self._entity_cfg.get('description', None)
+            # self._attributes['description'] = self._entity_cfg.get('description', None)
             self._state = STATE_UNKNOWN
 
             super().__init__(coordinator)
 
-            #_LOGGER.debug("%s - %s: __init__ kwargs = %s", self._api_id, self._identifier, kwargs)
+            # _LOGGER.debug("%s - %s: __init__ kwargs = %s", self._api_id, self._identifier, kwargs)
             self._init_platform_specific(**kwargs)
-            self.entity_id = generate_entity_id(platform + '.{}', self._entity_id, hass=hass)
+            self.entity_id = generate_entity_id(platform + ".{}", self._entity_id, hass=hass)
             _LOGGER.debug("%s - %s: __init__ complete (uid: %s)", self._api_id, self._identifier, self.uniqueid)
-            #ProgrammingDebug(self,True)
+            # ProgrammingDebug(self,True)
         except Exception as e:
-            _LOGGER.error("%s - %s: __init__ failed: %s (%s.%s)", self._api_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
+            _LOGGER.error(
+                "%s - %s: __init__ failed: %s (%s.%s)",
+                self._api_id,
+                self._identifier,
+                str(e),
+                e.__class__.__module__,
+                type(e).__name__,
+            )
             return None
-
 
     def _init_platform_specific(self, **kwargs):
         """Platform specific init actions"""
-        #do nothing here as this is only a drop-in option for other platforms
-        #do not put actions in a try / except block - execeptions should be covered by __init__
+        # do nothing here as this is only a drop-in option for other platforms
+        # do not put actions in a try / except block - execeptions should be covered by __init__
         pass
 
     @property
@@ -88,35 +95,30 @@ class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
         """Return the name of the entity."""
         return self._name
 
+    #    @property
+    #    def description(self) -> str | None:
+    #        """Return the description of the entity."""
+    #        return self._description
 
-#    @property
-#    def description(self) -> str | None:
-#        """Return the description of the entity."""
-#        return self._description
+    #    @property
+    #    def icon(self) -> str | None:
+    #        """Return the icon of the entity"""
+    #        return self._icon
 
+    #    @property
+    #    def device_class(self) -> str | None:
+    #        """Return the device_class of the entity."""
+    #        return self._device_class
 
-#    @property
-#    def icon(self) -> str | None:
-#        """Return the icon of the entity"""
-#        return self._icon
+    #    @property
+    #    def unit_of_measurement(self) -> str | None:
+    #        """Return the unit_of_measurement of the entity."""
+    #        return self._unit_of_measurement
 
-
-#    @property
-#    def device_class(self) -> str | None:
-#        """Return the device_class of the entity."""
-#        return self._device_class
-
-
-#    @property
-#    def unit_of_measurement(self) -> str | None:
-#        """Return the unit_of_measurement of the entity."""
-#        return self._unit_of_measurement
-
-
-#    @property
-#    def entity_category(self) -> EntityCategory | None:
-#        """Return the entity_category of the entity."""
-#        return None
+    #    @property
+    #    def entity_category(self) -> EntityCategory | None:
+    #        """Return the entity_category of the entity."""
+    #        return None
 
     @property
     def state(self) -> str | None:
@@ -136,41 +138,43 @@ class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
     @property
     def available(self) -> bool:
         """Return if device is available."""
-        #_LOGGER.debug("%s - %s: available", self._api_id, self._identifier)
+        # _LOGGER.debug("%s - %s: available", self._api_id, self._identifier)
         try:
             entry_data = self.hass.data[DOMAIN][self._entry_id]
-            d = self._device_cfg.get('device')
-            capabilities = entry_data[CONF_STATE][d].get('capabilities', [])
-            value=False
+            d = self._device_cfg.get("device")
+            capabilities = entry_data[CONF_STATE][d].get("capabilities", [])
+            value = False
             for cap in capabilities:
-                if cap['type'] == 'devices.capabilities.online':
-                    cap_state = cap.get('state',None)
+                if cap["type"] == "devices.capabilities.online":
+                    cap_state = cap.get("state", None)
                     if cap_state is not None:
-                        value = cap_state.get('value',False)
-            #_LOGGER.debug("%s - %s: available result: %s", self._api_id, self._identifier, value)
+                        value = cap_state.get("value", False)
+            # _LOGGER.debug("%s - %s: available result: %s", self._api_id, self._identifier, value)
             return value
         except Exception as e:
-            _LOGGER.error("%s - available: Failed: %s (%s.%s)", self._entry_id, str(e), e.__class__.__module__, type(e).__name__)
+            _LOGGER.error(
+                "%s - available: Failed: %s (%s.%s)", self._entry_id, str(e), e.__class__.__module__, type(e).__name__
+            )
             return False
 
     @property
     def device_info(self) -> DeviceInfo:
         """Return device information for device registry."""
-        #_LOGGER.debug("%s - %s: device_info", self._api_id, self._identifier)
+        # _LOGGER.debug("%s - %s: device_info", self._api_id, self._identifier)
         info = DeviceInfo(
-            identifiers={(DOMAIN, self._device_cfg.get('device', None))},
+            identifiers={(DOMAIN, self._device_cfg.get("device", None))},
             manufacturer=DOMAIN,
-            model=self._device_cfg.get('sku', STATE_UNKNOWN),
-            name=self._device_cfg.get('deviceName', STATE_UNKNOWN),
-            hw_version=str(self._device_cfg.get('type', STATE_UNKNOWN)).split('.')[-1],
+            model=self._device_cfg.get("sku", STATE_UNKNOWN),
+            name=self._device_cfg.get("deviceName", STATE_UNKNOWN),
+            hw_version=str(self._device_cfg.get("type", STATE_UNKNOWN)).split(".")[-1],
         )
-        #_LOGGER.debug("%s - %s: device_info result: %s", self._api_id, self._identifier, info)
+        # _LOGGER.debug("%s - %s: device_info result: %s", self._api_id, self._identifier, info)
         return info
 
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
-        #_LOGGER.debug("%s - %s: _handle_coordinator_update", self._api_id, self._identifier)
+        # _LOGGER.debug("%s - %s: _handle_coordinator_update", self._api_id, self._identifier)
         self.async_write_ha_state()
 
 
@@ -179,7 +183,7 @@ class GoveeAPIUpdateCoordinator(DataUpdateCoordinator):
 
     def __init__(self, hass, entry_id, device_cfg):
         """Initialize the coordinator."""
-        self._identifier = (str(device_cfg['device']).replace(':', '')) + '_GoveeAPIUpdate'
+        self._identifier = (str(device_cfg["device"]).replace(":", "")) + "_GoveeAPIUpdate"
         _LOGGER.debug("%s - async_GoveeAPI_GetDeviceState: __init__", self._identifier)
         scan_interval = hass.data[DOMAIN][entry_id][CONF_PARAMS][CONF_SCAN_INTERVAL]
         super().__init__(hass, _LOGGER, name=self._identifier, update_interval=timedelta(seconds=scan_interval))
@@ -193,7 +197,13 @@ class GoveeAPIUpdateCoordinator(DataUpdateCoordinator):
             async with async_timeout.timeout(entry_data[CONF_PARAMS][CONF_TIMEOUT]):
                 result = await async_GoveeAPI_GetDeviceState(self.hass, self._entry_id, self._device_cfg, True)
         except Exception as e:
-            _LOGGER.error("%s - GoveeAPIUpdateCoordinator: _async_update_data Failed: %s (%s.%s)", self._entry_id, str(e), e.__class__.__module__, type(e).__name__)
+            _LOGGER.error(
+                "%s - GoveeAPIUpdateCoordinator: _async_update_data Failed: %s (%s.%s)",
+                self._entry_id,
+                str(e),
+                e.__class__.__module__,
+                type(e).__name__,
+            )
             return False
 
         try:
@@ -208,7 +218,13 @@ class GoveeAPIUpdateCoordinator(DataUpdateCoordinator):
                 if scan_interval != self.update_interval:
                     self.update_interval = scan_interval
         except Exception as e:
-            _LOGGER.warning("%s - GoveeAPIUpdateCoordinator: _async_update_data update interval change failed: %s (%s.%s)", self._entry_id, str(e), e.__class__.__module__, type(e).__name__)
+            _LOGGER.warning(
+                "%s - GoveeAPIUpdateCoordinator: _async_update_data update interval change failed: %s (%s.%s)",
+                self._entry_id,
+                str(e),
+                e.__class__.__module__,
+                type(e).__name__,
+            )
 
         if result == 429 or result == 401:
             raise ConfigEntryAuthFailed
