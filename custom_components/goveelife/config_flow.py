@@ -82,7 +82,6 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize the options flow handler."""
         _LOGGER.debug("%s - OptionsFlowHandler: __init__: %s", DOMAIN, config_entry)
-        self.config_entry = config_entry
 
     async def async_step_init(self, user_input: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Manage the options for Govee Life."""
