@@ -25,6 +25,7 @@ platform_device_types = [
     'devices.types.socket:.*on_off:.*',
     'devices.types.socket:.*toggle:.*',
     'devices.types.light:.*toggle:gradientToggle',
+    'devices.types.light:.*toggle:dreamViewToggle',
     'devices.types.ice_maker:.*on_off:.*',
     'devices.types.aroma_diffuser:.*on_off:.*',
     'devices.types.humidifier:.*on_off:.*',
