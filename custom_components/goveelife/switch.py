@@ -1,19 +1,19 @@
 """Switch entities for the Govee Life integration."""
 
 from __future__ import annotations
-from typing import Final
-import logging
+
 import asyncio
+import logging
 import re
+from typing import Final
 
-from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.const import CONF_DEVICES, STATE_ON, STATE_OFF, STATE_UNKNOWN
+from homeassistant.const import CONF_DEVICES, STATE_OFF, STATE_ON, STATE_UNKNOWN
+from homeassistant.core import HomeAssistant
 
+from .const import CONF_COORDINATORS, DOMAIN
 from .entities import GoveeLifePlatformEntity
 from .utils import GoveeAPI_GetCachedStateValue, async_GoveeAPI_ControlDevice
-from .const import DOMAIN, CONF_COORDINATORS
 
 _LOGGER: Final = logging.getLogger(__name__)
 platform = 'switch'

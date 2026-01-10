@@ -1,19 +1,19 @@
 """Configuration schema for Govee Life."""
 
 from __future__ import annotations
-from typing import Final
-import logging
-import asyncio
-import voluptuous as vol
 
-from homeassistant import config_entries
+import asyncio
+import logging
+from typing import Final
+
+import homeassistant.helpers.config_validation as cv
+import voluptuous as vol
 from homeassistant.const import (
     CONF_API_KEY,
     CONF_FRIENDLY_NAME,
     CONF_SCAN_INTERVAL,
     CONF_TIMEOUT,
 )
-import homeassistant.helpers.config_validation as cv
 
 from .const import (
     DEFAULT_NAME,

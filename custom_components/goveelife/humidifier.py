@@ -1,13 +1,10 @@
 """Humidifier entities for the Govee Life integration."""
 
 from __future__ import annotations
-from typing import Final
-import logging
-import asyncio
 
-from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+import asyncio
+import logging
+from typing import Final
 
 from homeassistant.components.humidifier import (
     MODE_AUTO,
@@ -15,15 +12,17 @@ from homeassistant.components.humidifier import (
     HumidifierEntity,
     HumidifierEntityFeature,
 )
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_DEVICES,
-    STATE_ON,
     STATE_OFF,
+    STATE_ON,
     STATE_UNKNOWN,
 )
+from homeassistant.core import HomeAssistant
 
+from .const import CONF_COORDINATORS, DOMAIN
 from .entities import GoveeLifePlatformEntity
-from .const import DOMAIN, CONF_COORDINATORS
 from .utils import GoveeAPI_GetCachedStateValue, async_GoveeAPI_ControlDevice
 
 _LOGGER: Final = logging.getLogger(__name__)
@@ -37,7 +36,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     """Set up the humidifier platform."""
     _LOGGER.debug("Setting up %s platform entry: %s | %s", platform, DOMAIN, entry.entry_id)
     entities = []
-        
+
     try:
         _LOGGER.debug("%s - async_setup_entry %s: Getting cloud devices from data store", entry.entry_id, platform)
         entry_data = hass.data[DOMAIN][entry.entry_id]
@@ -49,9 +48,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     for device_cfg in api_devices:
         try:
             if device_cfg.get('type', STATE_UNKNOWN) not in platform_device_types:
-                continue      
+                continue
             device = device_cfg.get('device')
-            _LOGGER.debug("%s - async_setup_entry %s: Setup device: %s", entry.entry_id, platform, device) 
+            _LOGGER.debug("%s - async_setup_entry %s: Setup device: %s", entry.entry_id, platform, device)
             coordinator = entry_data[CONF_COORDINATORS][device]
             entity = GoveeLifeHumidifier(hass, entry, coordinator, device_cfg, platform=platform)
             entities.append(entity)

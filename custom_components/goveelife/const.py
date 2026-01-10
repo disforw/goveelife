@@ -1,6 +1,7 @@
 """Constants for Govee Life."""
 
 from __future__ import annotations
+
 from typing import Final
 
 DOMAIN: Final = 'goveelife'

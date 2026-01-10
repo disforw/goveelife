@@ -1,22 +1,21 @@
 """Init for the Govee Life integration."""
 
 from __future__ import annotations
-from typing import Final
+
 import logging
-import asyncio
+from typing import Final
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
 from homeassistant.const import (
-    CONF_API_KEY,
     CONF_DEVICES,
     CONF_PARAMS,
     CONF_SCAN_INTERVAL,
 )
+from homeassistant.core import HomeAssistant
 
 from .const import (
-    DOMAIN,
     CONF_COORDINATORS,
+    DOMAIN,
     FUNC_OPTION_UPDATES,
     SUPPORTED_PLATFORMS,
 )
@@ -28,9 +27,8 @@ from .services import (
     async_service_SetPollInterval,
 )
 from .utils import (
-    async_ProgrammingDebug,
-    async_GoveeAPI_GETRequest,
     async_GoveeAPI_GetDeviceState,
+    async_GoveeAPI_GETRequest,
 )
 
 _LOGGER: Final = logging.getLogger(__name__)
@@ -58,7 +56,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry_data[CONF_DEVICES] = api_devices
     except Exception as e:
         _LOGGER.error("%s - async_setup_entry: Receiving cloud devices failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
-        return False 
+        return False
 
     try:
         _LOGGER.debug("%s - async_setup_entry: Creating update coordinators per device..", entry.entry_id)
@@ -67,10 +65,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             await async_GoveeAPI_GetDeviceState(hass, entry.entry_id, device_cfg)
             coordinator = GoveeAPIUpdateCoordinator(hass, entry.entry_id, device_cfg)
             d = device_cfg.get('device')
-            entry_data[CONF_COORDINATORS][d] = coordinator            
+            entry_data[CONF_COORDINATORS][d] = coordinator
     except Exception as e:
         _LOGGER.error("%s - async_setup_entry: Creating update coordinators failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
-        return False 
+        return False
 
     try:
         _LOGGER.debug("%s - async_setup_entry: Register option updates listener: %s ", entry.entry_id, FUNC_OPTION_UPDATES)
@@ -90,7 +88,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await async_registerService(hass, "set_poll_interval", async_service_SetPollInterval)
     except Exception as e:
         _LOGGER.error("%s - async_setup_entry: register services failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
-        return False 
+        return False
 
     _LOGGER.debug("%s - async_setup_entry: Completed", entry.entry_id)
     return True

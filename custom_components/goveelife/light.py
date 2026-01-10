@@ -1,35 +1,35 @@
 """Light entities for the Govee Life integration."""
 
 from __future__ import annotations
-from typing import Final
-import logging
-import asyncio
-import math
 
-from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.restore_state import RestoreEntity
-from homeassistant.util.color import brightness_to_value, value_to_brightness
+import asyncio
+import logging
+import math
+from typing import Final
+
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_COLOR_TEMP_KELVIN,
-    ATTR_RGB_COLOR,
     ATTR_EFFECT,
+    ATTR_RGB_COLOR,
     ColorMode,
     LightEntity,
     LightEntityFeature,
 )
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_DEVICES,
-    STATE_ON,
     STATE_OFF,
+    STATE_ON,
     STATE_UNKNOWN,
 )
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
+from homeassistant.util.color import brightness_to_value, value_to_brightness
 
+from .const import CONF_COORDINATORS, DOMAIN
 from .entities import GoveeLifePlatformEntity
-from .const import DOMAIN, CONF_COORDINATORS
 from .utils import GoveeAPI_GetCachedStateValue, async_GoveeAPI_ControlDevice, async_GoveeAPI_GetDynamicScenes
 
 _LOGGER: Final = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     """Set up the light platform."""
     _LOGGER.debug("Setting up %s platform entry: %s | %s", platform, DOMAIN, entry.entry_id)
     entities = []
-        
+
     try:
         _LOGGER.debug("%s - async_setup_entry %s: Getting cloud devices from data store", entry.entry_id, platform)
         entry_data = hass.data[DOMAIN][entry.entry_id]
@@ -51,10 +51,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
     for device_cfg in api_devices:
         try:
-            if not device_cfg.get('type', STATE_UNKNOWN) in platform_device_types:
-                continue      
+            if device_cfg.get('type', STATE_UNKNOWN) not in platform_device_types:
+                continue
             d = device_cfg.get('device')
-            _LOGGER.debug("%s - async_setup_entry %s: Setup device: %s", entry.entry_id, platform, d) 
+            _LOGGER.debug("%s - async_setup_entry %s: Setup device: %s", entry.entry_id, platform, d)
             coordinator = entry_data[CONF_COORDINATORS][d]
             entity = GoveeLifeLight(hass, entry, coordinator, device_cfg, platform=platform)
             entities.append(entity)
@@ -95,13 +95,13 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
         self._current_scene = None
         self._dynamic_scenes = []
         self._scene_value_map = {}
-        
+
         _LOGGER.info("%s - %s: Device capabilities:", self._api_id, self._identifier)
         for cap in self._device_cfg.get('capabilities', []):
-            _LOGGER.info("%s - %s: - Capability: type=%s, instance=%s", 
-                        self._api_id, self._identifier, 
+            _LOGGER.info("%s - %s: - Capability: type=%s, instance=%s",
+                        self._api_id, self._identifier,
                         cap.get('type'), cap.get('instance'))
-        
+
         try:
             for cap in self._device_cfg.get('capabilities', []):
                 if cap['type'] == 'devices.capabilities.range':
@@ -112,7 +112,7 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
                             cap.get('parameters', {}).get('range', {}).get('max', 100)
                         )
                         _LOGGER.info("%s - %s: Brightness support enabled", self._api_id, self._identifier)
-                        
+
                 elif cap['type'] == 'devices.capabilities.color_setting':
                     if cap['instance'] == 'colorRgb':
                         self._support_color = True
@@ -124,30 +124,30 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
                             cap.get('parameters', {}).get('range', {}).get('max', 9000)
                         )
                         _LOGGER.info("%s - %s: Color temperature support enabled", self._api_id, self._identifier)
-                        
+
                 elif cap['type'] == 'devices.capabilities.dynamic_scene':
-                    _LOGGER.info("%s - %s: Found dynamic_scene capability with instance: %s", 
+                    _LOGGER.info("%s - %s: Found dynamic_scene capability with instance: %s",
                                 self._api_id, self._identifier, cap.get('instance'))
                     if cap['instance'] == 'lightScene':
                         self._support_scenes = True
                         self._has_dynamic_scenes = True
                         static_scenes = cap.get('parameters', {}).get('options', [])
-                        _LOGGER.info("%s - %s: Found %d static scenes in capabilities", 
+                        _LOGGER.info("%s - %s: Found %d static scenes in capabilities",
                                     self._api_id, self._identifier, len(static_scenes))
-                        
+
                         for scene in static_scenes:
                             scene_name = scene.get('name')
                             scene_value = scene.get('value')
-                            _LOGGER.debug("%s - %s: Static scene: %s = %s", 
+                            _LOGGER.debug("%s - %s: Static scene: %s = %s",
                                          self._api_id, self._identifier, scene_name, scene_value)
                             if scene_name and scene_value is not None:
                                 self._available_scenes.append(scene_name)
                                 self._scene_value_map[scene_name] = scene_value
-                        
-                        _LOGGER.info("%s - %s: Scene support enabled with %d scenes: %s", 
-                                    self._api_id, self._identifier, 
+
+                        _LOGGER.info("%s - %s: Scene support enabled with %d scenes: %s",
+                                    self._api_id, self._identifier,
                                     len(self._available_scenes), self._available_scenes)
-                        
+
                 elif cap['type'] == 'devices.capabilities.music_setting':
                     _LOGGER.debug("%s - %s: Found music_setting capability", self._api_id, self._identifier)
                     pass  # TO-BE-DONE: implement as select entity type
@@ -155,16 +155,16 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
                     _LOGGER.debug("%s - %s: Found dynamic_setting capability", self._api_id, self._identifier)
                     pass  # TO-BE-DONE: implement as select ? unsure about setting effect
                 else:
-                    _LOGGER.debug("%s - %s: _init_platform_specific: cap unhandled: %s", 
+                    _LOGGER.debug("%s - %s: _init_platform_specific: cap unhandled: %s",
                                  self._api_id, self._identifier, cap)
-            
-            _LOGGER.info("%s - %s: Final state - scenes=%s (%d scenes), brightness=%s, color=%s, color_temp=%s", 
-                        self._api_id, self._identifier, 
+
+            _LOGGER.info("%s - %s: Final state - scenes=%s (%d scenes), brightness=%s, color=%s, color_temp=%s",
+                        self._api_id, self._identifier,
                         self._support_scenes, len(self._available_scenes),
                         self._support_brightness, self._support_color, self._support_color_temp)
 
         except Exception as e:
-            _LOGGER.error("%s - %s: _platform_specific_init failed: %s (%s.%s)", 
+            _LOGGER.error("%s - %s: _platform_specific_init failed: %s (%s.%s)",
                          self._api_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
 
     def _getRGBfromI(self, RGBint):
@@ -187,13 +187,13 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
         """Flag supported features."""
         if self._support_scenes or self._has_dynamic_scenes:
             return LightEntityFeature.EFFECT
-        return LightEntityFeature(0) 
+        return LightEntityFeature(0)
 
     @property
     def supported_color_modes(self) -> set[ColorMode] | set[str] | None:
         """Flag supported color modes."""
         color_modes = set()
-        
+
         if self._support_color and self._support_color_temp:
             color_modes.add(ColorMode.RGB)
             color_modes.add(ColorMode.COLOR_TEMP)
@@ -205,8 +205,8 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
             color_modes.add(ColorMode.BRIGHTNESS)
         else:
             color_modes.add(ColorMode.ONOFF)
-        
-        _LOGGER.debug("%s - %s: Supported color modes: %s", 
+
+        _LOGGER.debug("%s - %s: Supported color modes: %s",
                      self._api_id, self._identifier, color_modes)
         return color_modes
 
@@ -226,26 +226,26 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
     def effect_list(self) -> list[str] | None:
         """Return the list of supported effects."""
         if not self._support_scenes:
-            _LOGGER.debug("%s - %s: effect_list - no scene support", 
+            _LOGGER.debug("%s - %s: effect_list - no scene support",
                          self._api_id, self._identifier)
             return None
-        
+
 
         all_scenes = list(self._available_scenes)
         for scene in self._dynamic_scenes:
             scene_name = scene.get('name')
             if scene_name and scene_name not in all_scenes:
                 all_scenes.append(scene_name)
-        
-        _LOGGER.debug("%s - %s: effect_list returning %d effects: %s", 
+
+        _LOGGER.debug("%s - %s: effect_list returning %d effects: %s",
                      self._api_id, self._identifier, len(all_scenes), all_scenes[:5])
-        
+
         return all_scenes if all_scenes else None
 
     @property
     def effect(self) -> str | None:
         """Return the current effect."""
-        _LOGGER.debug("%s - %s: Current effect: %s", 
+        _LOGGER.debug("%s - %s: Current effect: %s",
                      self._api_id, self._identifier, self._current_scene)
         return self._current_scene
 
@@ -321,21 +321,21 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
         try:
             _LOGGER.debug("%s - %s: async_turn_on", self._api_id, self._identifier)
             _LOGGER.debug("%s - %s: async_turn_on: kwargs = %s", self._api_id, self._identifier, kwargs)
-            
+
             if ATTR_EFFECT in kwargs:
                 effect_name = kwargs[ATTR_EFFECT]
                 _LOGGER.info("%s - %s: Setting effect: %s", self._api_id, self._identifier, effect_name)
-                
+
                 scene_value = self._scene_value_map.get(effect_name)
-                
+
                 if scene_value is None:
                     for scene in self._dynamic_scenes:
                         if scene.get('name') == effect_name:
                             scene_value = scene.get('value')
                             break
-                
+
                 if scene_value is not None:
-                    _LOGGER.info("%s - %s: Sending scene command with value: %s", 
+                    _LOGGER.info("%s - %s: Sending scene command with value: %s",
                                 self._api_id, self._identifier, scene_value)
                     state_capability = {
                         "type": "devices.capabilities.dynamic_scene",
@@ -345,19 +345,19 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
                     if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
                         self._current_scene = effect_name
                         self.async_write_ha_state()
-                        _LOGGER.info("%s - %s: Scene set successfully: %s", 
+                        _LOGGER.info("%s - %s: Scene set successfully: %s",
                                     self._api_id, self._identifier, effect_name)
                 else:
                     _LOGGER.warning("%s - %s: Effect not found: %s", self._api_id, self._identifier, effect_name)
-            
+
             if ATTR_RGB_COLOR in kwargs or ATTR_COLOR_TEMP_KELVIN in kwargs:
                 self._current_scene = None
-            
+
             if ATTR_BRIGHTNESS in kwargs and self._support_brightness:
                 state_capability = {
                     "type": "devices.capabilities.range",
                     "instance": 'brightness',
-                    "value": math.ceil(brightness_to_value(self._brightness_scale, kwargs[ATTR_BRIGHTNESS]))   
+                    "value": math.ceil(brightness_to_value(self._brightness_scale, kwargs[ATTR_BRIGHTNESS]))
                 }
                 if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
                     self.async_write_ha_state()
@@ -379,7 +379,7 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
                 }
                 if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
                     self.async_write_ha_state()
-            
+
             if not self.is_on:
                 state_capability = {
                     "type": "devices.capabilities.on_off",
@@ -390,7 +390,7 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
                     self.async_write_ha_state()
             else:
                 _LOGGER.debug("%s - %s: async_turn_on: device already on", self._api_id, self._identifier)
-                
+
         except Exception as e:
             _LOGGER.error("%s - %s: async_turn_on failed: %s (%s.%s)", self._api_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
 
@@ -412,16 +412,16 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
     async def async_added_to_hass(self):
         """When entity is added to hass."""
         await super().async_added_to_hass()
-        
-        _LOGGER.info("%s - %s: Entity added to hass, loading dynamic scenes if supported", 
+
+        _LOGGER.info("%s - %s: Entity added to hass, loading dynamic scenes if supported",
                     self._api_id, self._identifier)
-        
+
         last_state = await self.async_get_last_state()
         if last_state and last_state.attributes:
             self._current_scene = last_state.attributes.get('current_scene')
-            _LOGGER.debug("%s - %s: Restored current scene: %s", 
+            _LOGGER.debug("%s - %s: Restored current scene: %s",
                          self._api_id, self._identifier, self._current_scene)
-        
+
         if self._has_dynamic_scenes:
             await self._async_update_dynamic_scenes()
 
@@ -429,24 +429,24 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
         """Update dynamic scenes from API."""
         try:
             _LOGGER.info("%s - %s: Loading dynamic scenes from API", self._api_id, self._identifier)
-            
+
             dynamic_scenes = await async_GoveeAPI_GetDynamicScenes(self.hass, self._entry_id, self._device_cfg)
             if dynamic_scenes:
                 self._dynamic_scenes = dynamic_scenes
-                _LOGGER.info("%s - %s: Loaded %d dynamic scenes", 
+                _LOGGER.info("%s - %s: Loaded %d dynamic scenes",
                             self._api_id, self._identifier, len(dynamic_scenes))
-                
+
                 for scene in dynamic_scenes:
                     scene_name = scene.get('name')
                     scene_value = scene.get('value')
                     if scene_name and scene_value is not None:
                         self._scene_value_map[scene_name] = scene_value
-                        _LOGGER.debug("%s - %s: Dynamic scene: %s = %s", 
+                        _LOGGER.debug("%s - %s: Dynamic scene: %s = %s",
                                      self._api_id, self._identifier, scene_name, scene_value)
                 self.async_write_ha_state()
             else:
-                _LOGGER.info("%s - %s: No dynamic scenes returned from API", 
+                _LOGGER.info("%s - %s: No dynamic scenes returned from API",
                             self._api_id, self._identifier)
         except Exception as e:
-            _LOGGER.error("%s - %s: _async_update_dynamic_scenes failed: %s (%s.%s)", 
+            _LOGGER.error("%s - %s: _async_update_dynamic_scenes failed: %s (%s.%s)",
                          self._api_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)

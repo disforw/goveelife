@@ -1,26 +1,27 @@
 """Sensor entities for the Govee Life integration."""
 
 from __future__ import annotations
-from typing import Final
-import logging
-import asyncio
 
-from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntry
+import asyncio
+import logging
+from typing import Final
+
 from homeassistant.components.climate import (
     ClimateEntity,
     ClimateEntityFeature,
     HVACMode,
 )
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_DEVICES,
     STATE_UNKNOWN,
     UnitOfTemperature,
 )
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .const import CONF_COORDINATORS, DOMAIN
 from .entities import GoveeLifePlatformEntity
-from .const import DOMAIN, CONF_COORDINATORS
 from .utils import GoveeAPI_GetCachedStateValue, async_GoveeAPI_ControlDevice
 
 _LOGGER: Final = logging.getLogger(__name__)
@@ -134,7 +135,7 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
     @property
     def hvac_mode(self) -> str:
         """Return the hvac_mode of the entity."""
-        #_LOGGER.debug("%s - %s: hvac_mode", self._api_id, self._identifier)  
+        #_LOGGER.debug("%s - %s: hvac_mode", self._api_id, self._identifier)
         value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.on_off', 'powerSwitch')
         v = self._attr_hvac_modes_mapping.get(value,STATE_UNKNOWN)
         if v == STATE_UNKNOWN:
@@ -144,7 +145,7 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set new target hvac mode."""
-        #_LOGGER.debug("%s - %s: async_set_hvac_mode", self._api_id, self._identifier) 
+        #_LOGGER.debug("%s - %s: async_set_hvac_mode", self._api_id, self._identifier)
         state_capability = {
             "type": "devices.capabilities.on_off",
             "instance": "powerSwitch",
@@ -165,7 +166,7 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
     @property
     def preset_mode(self) -> str | None:
         """Return the preset_mode of the entity."""
-        #_LOGGER.debug("%s - %s: preset_mode", self._api_id, self._identifier)  
+        #_LOGGER.debug("%s - %s: preset_mode", self._api_id, self._identifier)
         value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.work_mode', 'workMode')
         if value is None:
             return None
@@ -191,7 +192,7 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
         if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
             self.async_write_ha_state()
         return None
-    
+
 
     @property
     def temperature_unit(self) -> str:
@@ -230,7 +231,7 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
         return float(temperature)
 
     async def async_set_temperature(self, **kwargs) -> None:
-        """Set new target temperature."""        
+        """Set new target temperature."""
         #_LOGGER.debug("%s - %s: async_set_temperature", self._api_id, self._identifier)
         value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.temperature_setting', 'targetTemperature')
         unit = value.get('unit', 'Celsius')
@@ -243,14 +244,14 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
                 }
             }
         if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
-            self.async_write_ha_state()      
+            self.async_write_ha_state()
         return None
 
 
     @property
     def current_temperature(self) -> float | None:
         """Return the current temperature of the entity."""
-        #_LOGGER.debug("%s - %s: current_temperature", self._api_id, self._identifier)  
+        #_LOGGER.debug("%s - %s: current_temperature", self._api_id, self._identifier)
         value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.property', 'sensorTemperature')
         if value is None or value == "":
             return None

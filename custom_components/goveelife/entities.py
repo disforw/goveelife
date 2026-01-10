@@ -1,36 +1,36 @@
 """Base entities for the Govee Life integration."""
 
 from __future__ import annotations
-from typing import Final
+
 import logging
 import os
 from datetime import timedelta
+from typing import Final
 
 import async_timeout
-
-from homeassistant.core import HomeAssistant, callback
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.entity import (
-    DeviceInfo,
-    Entity,
-    generate_entity_id,
-)
-from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
 from homeassistant.const import (
     CONF_FRIENDLY_NAME,
     CONF_PARAMS,
     CONF_SCAN_INTERVAL,
     CONF_STATE,
     CONF_TIMEOUT,
-    STATE_UNKNOWN,   
+    STATE_UNKNOWN,
 )
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers.entity import (
+    DeviceInfo,
+    Entity,
+    generate_entity_id,
+)
+from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
 
 from .const import (
     DEFAULT_NAME,
     DOMAIN,
-    STATE_DEBUG_FILENAME, 
+    STATE_DEBUG_FILENAME,
 )
-
 from .utils import async_GoveeAPI_GetDeviceState
 
 _LOGGER: Final = logging.getLogger(__name__)
@@ -52,7 +52,7 @@ class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
             self.hass = hass
 
             self._name = self._device_cfg.get('deviceName')
-            
+
             #self._icon = None
             #self._device_class = None
             #self._unit_of_measurement = None
@@ -77,11 +77,11 @@ class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
             return None
 
 
-    def _init_platform_specific(self, **kwargs): 
+    def _init_platform_specific(self, **kwargs):
         """Platform specific init actions"""
         #do nothing here as this is only a drop-in option for other platforms
         #do not put actions in a try / except block - execeptions should be covered by __init__
-        pass        
+        pass
 
     @property
     def name(self) -> str | None:
@@ -136,7 +136,7 @@ class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
     @property
     def available(self) -> bool:
         """Return if device is available."""
-        #_LOGGER.debug("%s - %s: available", self._api_id, self._identifier)        
+        #_LOGGER.debug("%s - %s: available", self._api_id, self._identifier)
         try:
             entry_data = self.hass.data[DOMAIN][self._entry_id]
             d = self._device_cfg.get('device')
@@ -145,9 +145,9 @@ class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
             for cap in capabilities:
                 if cap['type'] == 'devices.capabilities.online':
                     cap_state = cap.get('state',None)
-                    if not cap_state == None:
+                    if cap_state is not None:
                         value = cap_state.get('value',False)
-            #_LOGGER.debug("%s - %s: available result: %s", self._api_id, self._identifier, value) 
+            #_LOGGER.debug("%s - %s: available result: %s", self._api_id, self._identifier, value)
             return value
         except Exception as e:
             _LOGGER.error("%s - available: Failed: %s (%s.%s)", self._entry_id, str(e), e.__class__.__module__, type(e).__name__)
@@ -170,9 +170,7 @@ class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
-        d = self._device_cfg.get('device')
-        state_data = self.hass.data[DOMAIN][self._entry_id][CONF_STATE][d]
-        #_LOGGER.debug("%s - %s: _handle_coordinator_update: new state: %s", self._api_id, self._identifier, s)
+        #_LOGGER.debug("%s - %s: _handle_coordinator_update", self._api_id, self._identifier)
         self.async_write_ha_state()
 
 
@@ -212,5 +210,5 @@ class GoveeAPIUpdateCoordinator(DataUpdateCoordinator):
         except Exception as e:
             _LOGGER.warning("%s - GoveeAPIUpdateCoordinator: _async_update_data update interval change failed: %s (%s.%s)", self._entry_id, str(e), e.__class__.__module__, type(e).__name__)
 
-        if result == 429 or result == 401:      
+        if result == 429 or result == 401:
             raise ConfigEntryAuthFailed

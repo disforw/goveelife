@@ -1,54 +1,46 @@
 """Sensor entities for the Govee Life integration."""
 
 from __future__ import annotations
-from typing import Final
-import logging
-import asyncio
-import re
 
+import asyncio
+import logging
+import re
+from typing import Final
+
+from homeassistant.components.sensor import (
+    SensorStateClass,
+)
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import (
+    CONF_DEVICES,
+    CONF_STATE,
+    STATE_UNKNOWN,
+)
 from homeassistant.core import (
     HomeAssistant,
     callback,
 )
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.components.sensor import SensorStateClass
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.const import (
-    CONF_DEVICES,
-    STATE_UNKNOWN,
-    CONF_STATE,
-)
-from homeassistant.components.sensor import (
-    SensorDeviceClass,
-    SensorEntity,
-    SensorStateClass,
-)
 
+from .const import (
+    CONF_COORDINATORS,
+    DOMAIN,
+)
 from .entities import GoveeLifePlatformEntity
 from .utils import GoveeAPI_GetCachedStateValue
 
-from .const import (
-    DOMAIN,
-    CONF_COORDINATORS,
-)
-from .utils import (
-    async_ProgrammingDebug,
-)
-
 _LOGGER: Final = logging.getLogger(__name__)
 platform='sensor'
-platform_device_types = [ 
-    'devices.types.sensor:.*', 
-    'devices.types.thermometer:.*' 
+platform_device_types = [
+    'devices.types.sensor:.*',
+    'devices.types.thermometer:.*'
 ]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
     """Set up the sensor platform."""
     _LOGGER.debug("Setting up %s platform entry: %s | %s", platform, DOMAIN, entry.entry_id)
     entites=[]
-    
-    
+
+
     try:
         _LOGGER.debug("%s - async_setup_entry %s: Getting cloud devices from data store", entry.entry_id, platform)
         entry_data=hass.data[DOMAIN][entry.entry_id]
@@ -89,7 +81,7 @@ class GoveeLifeSensor(GoveeLifePlatformEntity):
     def _init_platform_specific(self, **kwargs):
         """Platform specific init actions"""
         capabilities = kwargs.get('cap')
-        self._capability_name = capabilities.get('instance') 
+        self._capability_name = capabilities.get('instance')
         self.uniqueid = self._identifier + '_' + self._entity_id + '_' + self._capability_name
         self._name = self._capability_name
         self._state_class = SensorStateClass.MEASUREMENT
@@ -102,22 +94,22 @@ class GoveeLifeSensor(GoveeLifePlatformEntity):
 
     @property
     def capability_attributes(self):
-        if not self.state_class is None:
+        if self.state_class is not None:
             return {"state_class": self.state_class}
 
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
-        #self._attr_is_on = self.coordinator.data[self.idx]["state"]        
+        #self._attr_is_on = self.coordinator.data[self.idx]["state"]
         d=self._device_cfg.get('device')
         self.hass.data[DOMAIN][self._entry_id][CONF_STATE][d]
         self.async_write_ha_state()
- 
+
     @property
     def state(self) -> str | None:
         """Return the current state of the entity."""
         value = GoveeAPI_GetCachedStateValue(self.hass, self._entry_id, self._device_cfg.get('device'), 'devices.capabilities.property', self._capability_name)
         _LOGGER.debug("%s - %s: state value: %s", self._api_id, self._identifier, value)
         return value
-        
+
 
