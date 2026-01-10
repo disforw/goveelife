@@ -4,7 +4,8 @@
 
 set_poll_interval:
   name: Set API data poll Interval
-  dscription: Temporary (until next restart) set the time in seconds to poll new data fom api
+  description: Temporary (until next restart) set the time in seconds to poll new data from api
+  target:
   fields:
     entry_id:
       name: Entry ID
