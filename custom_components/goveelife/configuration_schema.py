@@ -32,14 +32,22 @@ GOVEELIFE_SCHEMA: Final = vol.Schema({
 })
 
 async def async_get_OPTIONS_GOVEELIFE_SCHEMA(current_data):
-    """Async: return an schema object with current values as default""" 
+    """Async: return an schema object with current values as default"""
     try:
-        _LOGGER.debug("%s - async_get_OPTIONS_GOVEELIFE_SCHEMA", DOMAIN)        
-        #_LOGGER.debug("%s - async_get_OPTIONS_GOVEELIFE_SCHEMA: current_data: %s", DOMAIN, current_data)        
+        _LOGGER.debug("%s - async_get_OPTIONS_GOVEELIFE_SCHEMA", DOMAIN)
+        #_LOGGER.debug("%s - async_get_OPTIONS_GOVEELIFE_SCHEMA: current_data: %s", DOMAIN, current_data)
+
+        # Add description for scan_interval
+        scan_interval_desc = vol.Optional(
+            CONF_SCAN_INTERVAL,
+            default=current_data.get(CONF_SCAN_INTERVAL, DEFAULT_POLL_INTERVAL),
+            description="Poll interval in seconds. API limit: 10,000 requests/day. Recommended: 300s (5min) for 20+ devices"
+        )
+
         OPTIONS_GOVEELIFE_SCHEMA: Final = vol.Schema({
             vol.Required(CONF_FRIENDLY_NAME, default=current_data.get(CONF_FRIENDLY_NAME,DEFAULT_NAME)): cv.string,
             vol.Required(CONF_API_KEY, default=current_data.get(CONF_API_KEY)): cv.string,
-            vol.Optional(CONF_SCAN_INTERVAL, default=current_data.get(CONF_SCAN_INTERVAL,DEFAULT_POLL_INTERVAL)): cv.positive_int,
+            scan_interval_desc: cv.positive_int,
             vol.Optional(CONF_TIMEOUT, default=current_data.get(CONF_TIMEOUT,DEFAULT_TIMEOUT)): cv.positive_int,
         })
         await asyncio.sleep(0)
