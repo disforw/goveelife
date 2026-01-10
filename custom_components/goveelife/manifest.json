@@ -1,11 +1,12 @@
 {
   "domain": "goveelife",
   "name": "Govee Life",
-  "version": "3.1.0",
-  "config_flow": true,
-  "documentation": "https://github.com/disforw/goveelife",
-  "requirements": ["requests>=2.31.0"],
-  "dependencies": ["diagnostics","sensor"],
   "codeowners": ["@disforw"],
-  "iot_class": "cloud_polling"
+  "config_flow": true,
+  "dependencies": ["diagnostics", "sensor"],
+  "documentation": "https://github.com/disforw/goveelife",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/disforw/goveelife/issues",
+  "requirements": ["requests>=2.31.0"],
+  "version": "3.1.0"
 }
