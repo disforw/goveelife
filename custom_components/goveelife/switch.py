@@ -128,3 +128,11 @@ class GoveeLifeSwitch(GoveeLifePlatformEntity):
                 self.async_write_ha_state()
         except Exception as e:
             _LOGGER.error("%s - %s: async_turn_off failed: %s (%s.%s)", self._api_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
+
+    async def async_toggle(self, **kwargs) -> None:
+        """Toggle the switch state."""
+        _LOGGER.debug("%s - %s: async_toggle", self._api_id, self._identifier)
+        if self.is_on:
+            await self.async_turn_off(**kwargs)
+        else:
+            await self.async_turn_on(**kwargs)
