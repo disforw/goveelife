@@ -14,7 +14,21 @@ This custom Home Assistant integration is a work in progress that uses the newly
 ## Installing
 You can install this integration with HACS or manually.
 ### HACS
-After installing HACS ([click here for instructions](https://hacs.xyz/docs/setup/download/)), open the custom repositories section and paste the URL of this repo in. Then set the category to "integration". Then open the integrations page and add 'goveelife'.
+After installing HACS ([click here for instructions](https://www.hacs.xyz/docs/use/)), add a custom repository using the steps below.
+#### Add the custom repo
+  - Click on the 3 dots in the top right corner.
+  - Select "Custom repositories"
+  - Add the URL to the repository.
+  - Select the correct type.
+  - Click the "ADD" button.
+#### Download the Integration
+  - When taken back to the HACS list, search for "goveelife"
+  - In the list, click the three dots on the "goveelife" row
+  - Click download
+  - Choose a specific version if needed.
+  - Click download
+  - When complete, restart Home Assistant if needed.
+More info can be found (here)[https://hacs.xyz/docs/faq/custom_repositories/] if needed.
 
 ### Manually
 Copy the custom_components/goveelife to your custom_components folder. Reboot Home Assistant and configure the 'goveelife' integration via the integrations page.
