@@ -86,9 +86,6 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
 
     _state_mapping = {}
     _state_mapping_set = {}
-    _attr_preset_modes = []
-    _attr_preset_modes_mapping = {}
-    _attr_preset_modes_mapping_set = {}
     _ordered_named_fan_speeds = []  # Ordered list of speed names (e.g., ['Low', 'Medium', 'High'])
     _speed_mapping = {}  # Maps modeValue to speed name
     _speed_name_to_mode_value = {}  # Maps speed name to modeValue
@@ -122,6 +119,11 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
         # Get device SKU for model-specific handling
         self._device_sku = self._device_cfg.get("sku", None)
         _LOGGER.debug("%s - %s: Device SKU: %s", self._api_id, self._identifier, self._device_sku)
+
+        # Set per device so duplication of modes does not occur after each HA restart
+        self._attr_preset_modes = []
+        self._attr_preset_modes_mapping = {}
+        self._attr_preset_modes_mapping_set = {}
 
         for cap in capabilities:
             if cap["type"] == "devices.capabilities.on_off":
