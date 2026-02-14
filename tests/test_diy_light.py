@@ -13,7 +13,9 @@ def _create_light(hass, entry, coordinator, device_cfg):
     return GoveeLifeLight(hass, entry, coordinator, device_cfg, platform="light")
 
 
-@pytest.mark.parametrize("fixture_file", DIY_CAPABLE_FIXTURES, ids=[f.removesuffix(".json") for f in DIY_CAPABLE_FIXTURES])
+@pytest.mark.parametrize(
+    "fixture_file", DIY_CAPABLE_FIXTURES, ids=[f.removesuffix(".json") for f in DIY_CAPABLE_FIXTURES]
+)
 @pytest.mark.asyncio
 async def test_diy_scenes_loaded_and_deduplicated(hass, mock_config_entry, mock_coordinator, diy_scenes, fixture_file):
     device_cfg = load_device_fixture(fixture_file)
@@ -36,31 +38,41 @@ async def test_diy_scenes_loaded_and_deduplicated(hass, mock_config_entry, mock_
     assert effects[0].startswith("DIY: ")
 
 
-@pytest.mark.parametrize("fixture_file", DIY_CAPABLE_FIXTURES, ids=[f.removesuffix(".json") for f in DIY_CAPABLE_FIXTURES])
+@pytest.mark.parametrize(
+    "fixture_file", DIY_CAPABLE_FIXTURES, ids=[f.removesuffix(".json") for f in DIY_CAPABLE_FIXTURES]
+)
 @pytest.mark.asyncio
-async def test_diy_scene_activation(hass, mock_config_entry, mock_coordinator, diy_scenes, dynamic_scenes, fixture_file):
+async def test_diy_scene_activation(
+    hass, mock_config_entry, mock_coordinator, diy_scenes, dynamic_scenes, fixture_file
+):
     device_cfg = load_device_fixture(fixture_file)
     light = _create_light(hass, mock_config_entry, mock_coordinator, device_cfg)
 
-    with patch(
-        "custom_components.goveelife.light.async_GoveeAPI_GetDynamicDIYScenes",
-        new_callable=AsyncMock,
-        return_value=diy_scenes,
-    ), patch(
-        "custom_components.goveelife.light.async_GoveeAPI_GetDynamicScenes",
-        new_callable=AsyncMock,
-        return_value=dynamic_scenes,
+    with (
+        patch(
+            "custom_components.goveelife.light.async_GoveeAPI_GetDynamicDIYScenes",
+            new_callable=AsyncMock,
+            return_value=diy_scenes,
+        ),
+        patch(
+            "custom_components.goveelife.light.async_GoveeAPI_GetDynamicScenes",
+            new_callable=AsyncMock,
+            return_value=dynamic_scenes,
+        ),
     ):
         await light._async_update_dynamic_scenes()
         await light._async_update_diy_scenes()
 
-    with patch(
-        "custom_components.goveelife.light.async_GoveeAPI_ControlDevice",
-        new_callable=AsyncMock,
-        return_value=True,
-    ) as mock_control, patch(
-        "custom_components.goveelife.light.GoveeAPI_GetCachedStateValue",
-        return_value=1,
+    with (
+        patch(
+            "custom_components.goveelife.light.async_GoveeAPI_ControlDevice",
+            new_callable=AsyncMock,
+            return_value=True,
+        ) as mock_control,
+        patch(
+            "custom_components.goveelife.light.GoveeAPI_GetCachedStateValue",
+            return_value=1,
+        ),
     ):
         await light.async_turn_on(effect="DIY: Test DIY")
 
@@ -68,13 +80,16 @@ async def test_diy_scene_activation(hass, mock_config_entry, mock_coordinator, d
     assert diy_cap["instance"] == "diyScene"
     assert diy_cap["value"] == 21747659
 
-    with patch(
-        "custom_components.goveelife.light.async_GoveeAPI_ControlDevice",
-        new_callable=AsyncMock,
-        return_value=True,
-    ) as mock_control, patch(
-        "custom_components.goveelife.light.GoveeAPI_GetCachedStateValue",
-        return_value=1,
+    with (
+        patch(
+            "custom_components.goveelife.light.async_GoveeAPI_ControlDevice",
+            new_callable=AsyncMock,
+            return_value=True,
+        ) as mock_control,
+        patch(
+            "custom_components.goveelife.light.GoveeAPI_GetCachedStateValue",
+            return_value=1,
+        ),
     ):
         await light.async_turn_on(effect="Sunrise")
 
@@ -83,7 +98,9 @@ async def test_diy_scene_activation(hass, mock_config_entry, mock_coordinator, d
     assert regular_cap["value"] == 1001
 
 
-@pytest.mark.parametrize("fixture_file", DIY_CAPABLE_FIXTURES, ids=[f.removesuffix(".json") for f in DIY_CAPABLE_FIXTURES])
+@pytest.mark.parametrize(
+    "fixture_file", DIY_CAPABLE_FIXTURES, ids=[f.removesuffix(".json") for f in DIY_CAPABLE_FIXTURES]
+)
 @pytest.mark.asyncio
 async def test_diy_scenes_api_error(hass, mock_config_entry, mock_coordinator, fixture_file):
     device_cfg = load_device_fixture(fixture_file)

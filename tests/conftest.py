@@ -30,13 +30,11 @@ def load_device_fixture(filename: str):
 
 DEVICE_FIXTURES = sorted(p.name for p in DEVICE_RESPONSES_DIR.glob("*.json"))
 
-LIGHT_FIXTURES = [
-    f for f in DEVICE_FIXTURES
-    if load_device_fixture(f).get("type") == "devices.types.light"
-]
+LIGHT_FIXTURES = [f for f in DEVICE_FIXTURES if load_device_fixture(f).get("type") == "devices.types.light"]
 
 DIY_CAPABLE_FIXTURES = [
-    f for f in LIGHT_FIXTURES
+    f
+    for f in LIGHT_FIXTURES
     if any(c.get("instance") == "diyScene" for c in load_device_fixture(f).get("capabilities", []))
 ]
 
