@@ -30,7 +30,12 @@ from homeassistant.util.color import brightness_to_value, value_to_brightness
 
 from .const import CONF_COORDINATORS, DOMAIN
 from .entities import GoveeLifePlatformEntity
-from .utils import GoveeAPI_GetCachedStateValue, async_GoveeAPI_ControlDevice, async_GoveeAPI_GetDynamicScenes
+from .utils import (
+    GoveeAPI_GetCachedStateValue,
+    async_GoveeAPI_ControlDevice,
+    async_GoveeAPI_GetDynamicDIYScenes,
+    async_GoveeAPI_GetDynamicScenes,
+)
 
 _LOGGER: Final = logging.getLogger(__name__)
 platform = "light"
@@ -111,6 +116,7 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
         self._current_scene = None
         self._dynamic_scenes = []
         self._scene_value_map = {}
+        self._diy_scenes = []
 
         _LOGGER.info("%s - %s: Device capabilities:", self._api_id, self._identifier)
         for cap in self._device_cfg.get("capabilities", []):
@@ -278,7 +284,15 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
             _LOGGER.debug("%s - %s: effect_list - no scene support", self._api_id, self._identifier)
             return None
 
-        all_scenes = list(self._available_scenes)
+        all_scenes = []
+        for scene in self._diy_scenes:
+            display_name = scene.get("_display_name")
+            if display_name and display_name not in all_scenes:
+                all_scenes.append(display_name)
+
+        for name in self._available_scenes:
+            if name not in all_scenes:
+                all_scenes.append(name)
         for scene in self._dynamic_scenes:
             scene_name = scene.get("name")
             if scene_name and scene_name not in all_scenes:
@@ -310,6 +324,7 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
         attributes["supports_scenes"] = self._support_scenes
         attributes["available_scenes_count"] = len(self._available_scenes)
         attributes["dynamic_scenes_count"] = len(self._dynamic_scenes)
+        attributes["diy_scenes_count"] = len(self._diy_scenes)
         return attributes
 
     @property
@@ -398,14 +413,31 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
                             break
 
                 if scene_value is not None:
-                    _LOGGER.info(
-                        "%s - %s: Sending scene command with value: %s", self._api_id, self._identifier, scene_value
-                    )
-                    state_capability = {
-                        "type": "devices.capabilities.dynamic_scene",
-                        "instance": "lightScene",
-                        "value": scene_value,
-                    }
+                    scene_info = self._scene_value_map.get(effect_name)
+                    if isinstance(scene_info, dict) and scene_info.get("type") == "diy":
+                        _LOGGER.info(
+                            "%s - %s: Sending DIY scene command with value: %s",
+                            self._api_id,
+                            self._identifier,
+                            scene_info["value"],
+                        )
+                        state_capability = {
+                            "type": "devices.capabilities.dynamic_scene",
+                            "instance": "diyScene",
+                            "value": scene_info["value"],
+                        }
+                    else:
+                        _LOGGER.info(
+                            "%s - %s: Sending scene command with value: %s",
+                            self._api_id,
+                            self._identifier,
+                            scene_value,
+                        )
+                        state_capability = {
+                            "type": "devices.capabilities.dynamic_scene",
+                            "instance": "lightScene",
+                            "value": scene_value,
+                        }
                     if await async_GoveeAPI_ControlDevice(
                         self.hass, self._entry_id, self._device_cfg, state_capability
                     ):
@@ -503,6 +535,47 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
 
         if self._has_dynamic_scenes:
             await self._async_update_dynamic_scenes()
+            await self._async_update_diy_scenes()
+
+    async def _async_update_diy_scenes(self):
+        """Update DIY scenes from API."""
+        try:
+            _LOGGER.info("%s - %s: Loading DIY scenes from API", self._api_id, self._identifier)
+
+            diy_scenes = await async_GoveeAPI_GetDynamicDIYScenes(self.hass, self._entry_id, self._device_cfg)
+            if diy_scenes:
+                self._diy_scenes = diy_scenes
+                _LOGGER.info("%s - %s: Loaded %d DIY scenes", self._api_id, self._identifier, len(diy_scenes))
+
+                name_counts = {}
+                for scene in diy_scenes:
+                    scene_name = scene.get("name")
+                    scene_value = scene.get("value")
+                    if scene_name and scene_value is not None:
+                        prefixed = f"DIY: {scene_name}"
+                        if prefixed in self._scene_value_map or prefixed in name_counts:
+                            count = name_counts.get(prefixed, 1) + 1
+                            name_counts[prefixed] = count
+                            prefixed = f"{prefixed} ({count})"
+                        else:
+                            name_counts[prefixed] = 1
+                        scene["_display_name"] = prefixed
+                        self._scene_value_map[prefixed] = {"value": scene_value, "type": "diy"}
+                        _LOGGER.debug(
+                            "%s - %s: DIY scene: %s = %s", self._api_id, self._identifier, prefixed, scene_value
+                        )
+                self.async_write_ha_state()
+            else:
+                _LOGGER.info("%s - %s: No DIY scenes returned from API", self._api_id, self._identifier)
+        except Exception as e:
+            _LOGGER.error(
+                "%s - %s: _async_update_diy_scenes failed: %s (%s.%s)",
+                self._api_id,
+                self._identifier,
+                str(e),
+                e.__class__.__module__,
+                type(e).__name__,
+            )
 
     async def _async_update_dynamic_scenes(self):
         """Update dynamic scenes from API."""

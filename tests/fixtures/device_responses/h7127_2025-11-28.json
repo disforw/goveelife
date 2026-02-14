@@ -1,0 +1,94 @@
+{
+  "github_issue_url": "https://github.com/disforw/goveelife/issues/91",
+  "sku": "H7127",
+  "device": "AA:BB:CC:DD:EE:FF:00:37",
+  "deviceName": "Smart Space Heater",
+  "type": "devices.types.air_purifier",
+  "capabilities": [
+    {
+      "type": "devices.capabilities.on_off",
+      "instance": "powerSwitch",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.work_mode",
+      "instance": "workMode",
+      "parameters": {
+        "dataType": "STRUCT",
+        "fields": [
+          {
+            "fieldName": "workMode",
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "gearMode",
+                "value": 1
+              },
+              {
+                "name": "Custom",
+                "value": 2
+              },
+              {
+                "name": "Auto",
+                "value": 3
+              }
+            ],
+            "required": true
+          },
+          {
+            "fieldName": "modeValue",
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "gearMode",
+                "options": [
+                  {
+                    "name": "Sleep",
+                    "value": 1
+                  },
+                  {
+                    "name": "Low",
+                    "value": 2
+                  },
+                  {
+                    "name": "High",
+                    "value": 3
+                  }
+                ]
+              },
+              {
+                "defaultValue": 0,
+                "name": "Custom"
+              },
+              {
+                "defaultValue": 0,
+                "name": "Auto"
+              }
+            ],
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.property",
+      "instance": "filterLifeTime"
+    },
+    {
+      "type": "devices.capabilities.property",
+      "instance": "airQuality"
+    }
+  ]
+}

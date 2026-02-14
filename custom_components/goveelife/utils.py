@@ -447,7 +447,7 @@ async def async_GoveeAPI_GetDynamicDIYScenes(hass: HomeAssistant, entry_id: str,
             capabilities = payload.get("capabilities", [])
 
             for cap in capabilities:
-                if cap.get("type") == "devices.capabilities.diy_color_setting" and cap.get("instance") == "diyScene":
+                if cap.get("instance") == "diyScene":
                     options = cap.get("parameters", {}).get("options", [])
                     _LOGGER.debug(
                         "%s - async_GoveeAPI_GetDynamicDIYScenes: found %d DIY scenes", entry_id, len(options)

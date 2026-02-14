@@ -1,0 +1,26 @@
+{
+  "github_issue_url": "https://github.com/disforw/goveelife/issues/4",
+  "sku": "H5082",
+  "device": "AA:BB:CC:DD:EE:FF:00:10",
+  "deviceName": "Smart Dual Outlet",
+  "type": "devices.types.socket",
+  "capabilities": [
+    {
+      "type": "devices.capabilities.on_off",
+      "instance": "powerSwitch",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      }
+    }
+  ]
+}

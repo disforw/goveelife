@@ -1,0 +1,79 @@
+{
+  "github_issue_url": "https://github.com/disforw/goveelife/issues/83",
+  "sku": "H6010",
+  "device": "AA:BB:CC:DD:EE:FF:00:32",
+  "deviceName": "Smart LED Light Bulb",
+  "type": "devices.types.light",
+  "capabilities": [
+    {
+      "type": "devices.capabilities.on_off",
+      "instance": "powerSwitch",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.range",
+      "instance": "brightness",
+      "parameters": {
+        "unit": "unit.percent",
+        "dataType": "INTEGER",
+        "range": {
+          "min": 1,
+          "max": 100,
+          "precision": 1
+        }
+      }
+    },
+    {
+      "type": "devices.capabilities.color_setting",
+      "instance": "colorRgb",
+      "parameters": {
+        "dataType": "INTEGER",
+        "range": {
+          "min": 0,
+          "max": 16777215,
+          "precision": 1
+        }
+      }
+    },
+    {
+      "type": "devices.capabilities.color_setting",
+      "instance": "colorTemperatureK",
+      "parameters": {
+        "dataType": "INTEGER",
+        "range": {
+          "min": 2000,
+          "max": 9000,
+          "precision": 1
+        }
+      }
+    },
+    {
+      "type": "devices.capabilities.dynamic_scene",
+      "instance": "lightScene",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": []
+      }
+    },
+    {
+      "type": "devices.capabilities.dynamic_scene",
+      "instance": "diyScene",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": []
+      }
+    }
+  ]
+}

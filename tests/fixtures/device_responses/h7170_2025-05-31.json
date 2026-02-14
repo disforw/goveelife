@@ -1,0 +1,142 @@
+{
+  "github_issue_url": "https://github.com/disforw/goveelife/issues/61",
+  "sku": "H7170",
+  "device": "AA:BB:CC:DD:EE:FF:00:81",
+  "deviceName": "Smart Kettle",
+  "type": "devices.types.kettle",
+  "capabilities": [
+    {
+      "type": "devices.capabilities.on_off",
+      "instance": "powerSwitch",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.temperature_setting",
+      "instance": "sliderTemperature",
+      "parameters": {
+        "dataType": "STRUCT",
+        "fields": [
+          {
+            "fieldName": "temperature",
+            "dataType": "INTEGER",
+            "range": {
+              "min": 40,
+              "max": 100,
+              "precision": 1
+            },
+            "required": true
+          },
+          {
+            "fieldName": "unit",
+            "defaultValue": "Celsius",
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "Celsius",
+                "value": "Celsius"
+              },
+              {
+                "name": "Fahrenheit",
+                "value": "Fahrenheit"
+              }
+            ],
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.property",
+      "instance": "sensorTemperature"
+    },
+    {
+      "type": "devices.capabilities.work_mode",
+      "instance": "workMode",
+      "parameters": {
+        "dataType": "STRUCT",
+        "fields": [
+          {
+            "fieldName": "workMode",
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "DIY",
+                "value": 1
+              },
+              {
+                "name": "Green Tea",
+                "value": 2
+              },
+              {
+                "name": "Oolong Tea",
+                "value": 3
+              },
+              {
+                "name": "Coffee",
+                "value": 4
+              },
+              {
+                "name": "Black Tea/Boil",
+                "value": 5
+              }
+            ],
+            "required": true
+          },
+          {
+            "fieldName": "modeValue",
+            "dataType": "ENUM",
+            "options": [
+              {
+                "dataType": "ENUM",
+                "name": "DIY",
+                "options": [
+                  {
+                    "value": 1
+                  },
+                  {
+                    "value": 2
+                  },
+                  {
+                    "value": 3
+                  },
+                  {
+                    "value": 4
+                  }
+                ]
+              },
+              {
+                "defaultValue": 0,
+                "name": "Green Tea"
+              },
+              {
+                "defaultValue": 0,
+                "name": "Oolong Tea"
+              },
+              {
+                "defaultValue": 0,
+                "name": "Coffee"
+              },
+              {
+                "defaultValue": 0,
+                "name": "Black Tea/Boil"
+              }
+            ],
+            "required": false
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,188 @@
+{
+  "github_issue_url": "https://github.com/disforw/goveelife/issues/75",
+  "sku": "H6022",
+  "device": "AA:BB:CC:DD:EE:FF:00:29",
+  "deviceName": "Smart LED Light Strip",
+  "type": "devices.types.light",
+  "capabilities": [
+    {
+      "type": "devices.capabilities.on_off",
+      "instance": "powerSwitch",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.range",
+      "instance": "brightness",
+      "parameters": {
+        "unit": "unit.percent",
+        "dataType": "INTEGER",
+        "range": {
+          "min": 1,
+          "max": 100,
+          "precision": 1
+        }
+      }
+    },
+    {
+      "type": "devices.capabilities.color_setting",
+      "instance": "colorRgb",
+      "parameters": {
+        "dataType": "INTEGER",
+        "range": {
+          "min": 0,
+          "max": 16777215,
+          "precision": 1
+        }
+      }
+    },
+    {
+      "type": "devices.capabilities.color_setting",
+      "instance": "colorTemperatureK",
+      "parameters": {
+        "dataType": "INTEGER",
+        "range": {
+          "min": 2700,
+          "max": 6500,
+          "precision": 1
+        }
+      }
+    },
+    {
+      "type": "devices.capabilities.segment_color_setting",
+      "instance": "segmentedColorRgb",
+      "parameters": {
+        "dataType": "STRUCT",
+        "fields": [
+          {
+            "fieldName": "segment",
+            "size": {
+              "min": 1,
+              "max": 15
+            },
+            "dataType": "Array",
+            "elementRange": {
+              "min": 0,
+              "max": 14
+            },
+            "elementType": "INTEGER",
+            "required": true
+          },
+          {
+            "fieldName": "rgb",
+            "dataType": "INTEGER",
+            "range": {
+              "min": 0,
+              "max": 16777215,
+              "precision": 1
+            },
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.dynamic_scene",
+      "instance": "lightScene",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": []
+      }
+    },
+    {
+      "type": "devices.capabilities.music_setting",
+      "instance": "musicMode",
+      "parameters": {
+        "dataType": "STRUCT",
+        "fields": [
+          {
+            "fieldName": "musicMode",
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "Energic",
+                "value": 5
+              },
+              {
+                "name": "Rhythm",
+                "value": 3
+              },
+              {
+                "name": "Spectrum",
+                "value": 6
+              },
+              {
+                "name": "Rolling",
+                "value": 4
+              }
+            ],
+            "required": true
+          },
+          {
+            "unit": "unit.percent",
+            "fieldName": "sensitivity",
+            "dataType": "INTEGER",
+            "range": {
+              "min": 0,
+              "max": 100,
+              "precision": 1
+            },
+            "required": true
+          },
+          {
+            "fieldName": "autoColor",
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ],
+            "required": false
+          },
+          {
+            "fieldName": "rgb",
+            "dataType": "INTEGER",
+            "range": {
+              "min": 0,
+              "max": 16777215,
+              "precision": 1
+            },
+            "required": false
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.dynamic_scene",
+      "instance": "diyScene",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": []
+      }
+    },
+    {
+      "type": "devices.capabilities.dynamic_scene",
+      "instance": "snapshot",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": []
+      }
+    }
+  ]
+}
