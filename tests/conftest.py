@@ -5,7 +5,14 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from homeassistant.const import CONF_API_KEY, CONF_DEVICES, CONF_FRIENDLY_NAME, CONF_PARAMS, CONF_SCAN_INTERVAL, CONF_TIMEOUT
+from homeassistant.const import (
+    CONF_API_KEY,
+    CONF_DEVICES,
+    CONF_FRIENDLY_NAME,
+    CONF_PARAMS,
+    CONF_SCAN_INTERVAL,
+    CONF_TIMEOUT,
+)
 
 from custom_components.goveelife.const import CONF_COORDINATORS, DOMAIN
 
