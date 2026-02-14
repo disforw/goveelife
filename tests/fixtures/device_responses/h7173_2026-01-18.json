@@ -1,0 +1,80 @@
+{
+  "github_issue_url": "https://github.com/disforw/goveelife/issues/119",
+  "sku": "H7173",
+  "device": "AA:BB:CC:DD:EE:FF:00:77",
+  "deviceName": "H7173",
+  "type": "devices.types.kettle",
+  "capabilities": [
+    {
+      "type": "devices.capabilities.on_off",
+      "instance": "powerSwitch",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {"name": "on", "value": 1},
+          {"name": "off", "value": 0}
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.temperature_setting",
+      "instance": "sliderTemperature",
+      "parameters": {
+        "dataType": "STRUCT",
+        "fields": [
+          {
+            "fieldName": "temperature",
+            "dataType": "INTEGER",
+            "range": {"min": 40, "max": 100, "precision": 1},
+            "required": true
+          },
+          {
+            "fieldName": "unit",
+            "defaultValue": "Celsius",
+            "dataType": "ENUM",
+            "options": [
+              {"name": "Celsius", "value": "Celsius"},
+              {"name": "Fahrenheit", "value": "Fahrenheit"}
+            ],
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.property",
+      "instance": "sensorTemperature"
+    },
+    {
+      "type": "devices.capabilities.work_mode",
+      "instance": "workMode",
+      "parameters": {
+        "dataType": "STRUCT",
+        "fields": [
+          {
+            "fieldName": "workMode",
+            "dataType": "ENUM",
+            "options": [
+              {"name": "DIY", "value": 1},
+              {"name": "Boiling", "value": 2},
+              {"name": "Tea", "value": 3},
+              {"name": "Coffee", "value": 4}
+            ],
+            "required": true
+          },
+          {
+            "fieldName": "modeValue",
+            "dataType": "ENUM",
+            "options": [
+              {"defaultValue": 0, "name": "Boiling"},
+              {"dataType": "ENUM", "name": "Tea", "options": [{"value": 1}, {"value": 2}, {"value": 3}, {"value": 4}]},
+              {"dataType": "ENUM", "name": "Coffee", "options": [{"value": 1}, {"value": 2}, {"value": 3}, {"value": 4}]},
+              {"dataType": "ENUM", "name": "DIY", "options": [{"value": 1}, {"value": 2}, {"value": 3}, {"value": 4}]}
+            ],
+            "required": false
+          }
+        ]
+      }
+    }
+  ]
+}

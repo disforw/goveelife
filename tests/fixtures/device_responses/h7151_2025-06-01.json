@@ -1,0 +1,116 @@
+{
+  "github_issue_url": "https://github.com/disforw/goveelife/issues/62",
+  "sku": "H7151",
+  "device": "AA:BB:CC:DD:EE:FF:00:23",
+  "deviceName": "Smart Humidifier",
+  "type": "devices.types.dehumidifier",
+  "capabilities": [
+    {
+      "instance": "powerSwitch",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      },
+      "type": "devices.capabilities.on_off"
+    },
+    {
+      "instance": "humidity",
+      "parameters": {
+        "dataType": "INTEGER",
+        "range": {
+          "max": 80,
+          "min": 30,
+          "precision": 1
+        },
+        "unit": "unit.percent"
+      },
+      "type": "devices.capabilities.range"
+    },
+    {
+      "instance": "workMode",
+      "parameters": {
+        "dataType": "STRUCT",
+        "fields": [
+          {
+            "dataType": "ENUM",
+            "fieldName": "workMode",
+            "options": [
+              {
+                "name": "gearMode",
+                "value": 1
+              },
+              {
+                "name": "Auto",
+                "value": 3
+              },
+              {
+                "name": "Dryer",
+                "value": 8
+              }
+            ],
+            "required": true
+          },
+          {
+            "dataType": "ENUM",
+            "fieldName": "modeValue",
+            "options": [
+              {
+                "name": "gearMode",
+                "options": [
+                  {
+                    "name": "Low",
+                    "value": 1
+                  },
+                  {
+                    "name": "Medium",
+                    "value": 2
+                  },
+                  {
+                    "name": "High",
+                    "value": 3
+                  }
+                ]
+              },
+              {
+                "name": "Auto",
+                "range": {
+                  "max": 80,
+                  "min": 80
+                }
+              },
+              {
+                "defaultValue": 0,
+                "name": "Dryer"
+              }
+            ],
+            "required": true
+          }
+        ]
+      },
+      "type": "devices.capabilities.work_mode"
+    },
+    {
+      "alarmType": 58,
+      "eventState": {
+        "options": [
+          {
+            "message": "Water bucket is full or has been pulled out",
+            "name": "waterFull",
+            "value": 1
+          }
+        ]
+      },
+      "instance": "waterFullEvent",
+      "type": "devices.capabilities.event"
+    }
+  ]
+}

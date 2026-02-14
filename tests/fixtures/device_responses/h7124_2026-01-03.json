@@ -1,0 +1,172 @@
+{
+  "github_issue_url": "https://github.com/disforw/goveelife/issues/102",
+  "sku": "H7124",
+  "device": "AA:BB:CC:DD:EE:FF:00:40",
+  "deviceName": "Smart Space Heater",
+  "type": "devices.types.air_purifier",
+  "capabilities": [
+    {
+      "type": "devices.capabilities.on_off",
+      "instance": "powerSwitch",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.work_mode",
+      "instance": "workMode",
+      "parameters": {
+        "dataType": "STRUCT",
+        "fields": [
+          {
+            "fieldName": "workMode",
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "gearMode",
+                "value": 1
+              },
+              {
+                "name": "Sleep",
+                "value": 5
+              },
+              {
+                "name": "Auto",
+                "value": 3
+              },
+              {
+                "name": "Turbo",
+                "value": 7
+              }
+            ],
+            "required": true
+          },
+          {
+            "fieldName": "modeValue",
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "gearMode",
+                "options": [
+                  {
+                    "name": "Low",
+                    "value": 1
+                  },
+                  {
+                    "name": "Medium",
+                    "value": 2
+                  },
+                  {
+                    "name": "High",
+                    "value": 3
+                  }
+                ]
+              },
+              {
+                "defaultValue": 0,
+                "name": "Sleep"
+              },
+              {
+                "defaultValue": 0,
+                "name": "Auto"
+              },
+              {
+                "defaultValue": 0,
+                "name": "Turbo"
+              }
+            ],
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.toggle",
+      "instance": "nightlightToggle",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.range",
+      "instance": "brightness",
+      "parameters": {
+        "dataType": "INTEGER",
+        "range": {
+          "min": 1,
+          "max": 100,
+          "precision": 1
+        }
+      }
+    },
+    {
+      "type": "devices.capabilities.color_setting",
+      "instance": "colorRgb",
+      "parameters": {
+        "dataType": "INTEGER",
+        "range": {
+          "min": 0,
+          "max": 16777215,
+          "precision": 1
+        }
+      }
+    },
+    {
+      "type": "devices.capabilities.mode",
+      "instance": "nightlightScene",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "Forest",
+            "value": 1
+          },
+          {
+            "name": "Ocean",
+            "value": 2
+          },
+          {
+            "name": "Wetland",
+            "value": 3
+          },
+          {
+            "name": "Leisurely",
+            "value": 4
+          },
+          {
+            "name": "Asleep",
+            "value": 5
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.property",
+      "instance": "filterLifeTime"
+    },
+    {
+      "type": "devices.capabilities.property",
+      "instance": "airQuality"
+    }
+  ]
+}

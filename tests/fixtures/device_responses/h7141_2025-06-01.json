@@ -1,0 +1,128 @@
+{
+  "github_issue_url": "https://github.com/disforw/goveelife/issues/63",
+  "sku": "H7141",
+  "device": "AA:BB:CC:DD:EE:FF:00:24",
+  "deviceName": "Smart Ice Maker",
+  "type": "devices.types.humidifier",
+  "capabilities": [
+    {
+      "instance": "powerSwitch",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      },
+      "type": "devices.capabilities.on_off"
+    },
+    {
+      "instance": "workMode",
+      "parameters": {
+        "dataType": "STRUCT",
+        "fields": [
+          {
+            "dataType": "ENUM",
+            "fieldName": "workMode",
+            "options": [
+              {
+                "name": "Manual",
+                "value": 1
+              },
+              {
+                "name": "Custom",
+                "value": 2
+              },
+              {
+                "name": "Auto",
+                "value": 3
+              }
+            ],
+            "required": true
+          },
+          {
+            "dataType": "ENUM",
+            "fieldName": "modeValue",
+            "options": [
+              {
+                "name": "Manual",
+                "options": [
+                  {
+                    "value": 1
+                  },
+                  {
+                    "value": 2
+                  },
+                  {
+                    "value": 3
+                  },
+                  {
+                    "value": 4
+                  },
+                  {
+                    "value": 5
+                  },
+                  {
+                    "value": 6
+                  },
+                  {
+                    "value": 7
+                  },
+                  {
+                    "value": 8
+                  }
+                ]
+              },
+              {
+                "defaultValue": 0,
+                "name": "Custom"
+              },
+              {
+                "name": "Auto",
+                "range": {
+                  "max": 70,
+                  "min": 40
+                }
+              }
+            ],
+            "required": false
+          }
+        ]
+      },
+      "type": "devices.capabilities.work_mode"
+    },
+    {
+      "instance": "humidity",
+      "parameters": {
+        "dataType": "INTEGER",
+        "range": {
+          "max": 70,
+          "min": 40,
+          "precision": 1
+        },
+        "unit": "unit.percent"
+      },
+      "type": "devices.capabilities.range"
+    },
+    {
+      "alarmType": 51,
+      "eventState": {
+        "options": [
+          {
+            "message": "Lack of Water",
+            "name": "lack",
+            "value": 1
+          }
+        ]
+      },
+      "instance": "lackWaterEvent",
+      "type": "devices.capabilities.event"
+    }
+  ]
+}

@@ -1,0 +1,217 @@
+{
+  "github_issue_url": "https://github.com/disforw/goveelife/issues/70",
+  "sku": "H7107",
+  "device": "AA:BB:CC:DD:EE:FF:00:27",
+  "deviceName": "Smart Tower Fan",
+  "type": "devices.types.fan",
+  "capabilities": [
+    {
+      "type": "devices.capabilities.on_off",
+      "instance": "powerSwitch",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.toggle",
+      "instance": "oscillationToggle",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.work_mode",
+      "instance": "workMode",
+      "parameters": {
+        "dataType": "STRUCT",
+        "fields": [
+          {
+            "fieldName": "workMode",
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "FanSpeed",
+                "value": 1
+              },
+              {
+                "name": "Auto",
+                "value": 2
+              },
+              {
+                "name": "Sleep",
+                "value": 3
+              },
+              {
+                "name": "Nature",
+                "value": 4
+              },
+              {
+                "name": "Custom",
+                "value": 5
+              }
+            ],
+            "required": true
+          },
+          {
+            "fieldName": "modeValue",
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "FanSpeed",
+                "options": [
+                  {
+                    "value": 1
+                  },
+                  {
+                    "value": 2
+                  },
+                  {
+                    "value": 3
+                  },
+                  {
+                    "value": 4
+                  },
+                  {
+                    "value": 5
+                  },
+                  {
+                    "value": 6
+                  },
+                  {
+                    "value": 7
+                  },
+                  {
+                    "value": 8
+                  },
+                  {
+                    "value": 9
+                  },
+                  {
+                    "value": 10
+                  },
+                  {
+                    "value": 11
+                  },
+                  {
+                    "value": 12
+                  }
+                ]
+              },
+              {
+                "defaultValue": 0,
+                "name": "Auto"
+              },
+              {
+                "name": "Sleep",
+                "options": [
+                  {
+                    "value": 1
+                  },
+                  {
+                    "value": 2
+                  },
+                  {
+                    "value": 3
+                  },
+                  {
+                    "value": 4
+                  },
+                  {
+                    "value": 5
+                  },
+                  {
+                    "value": 6
+                  },
+                  {
+                    "value": 7
+                  },
+                  {
+                    "value": 8
+                  },
+                  {
+                    "value": 9
+                  },
+                  {
+                    "value": 10
+                  },
+                  {
+                    "value": 11
+                  },
+                  {
+                    "value": 12
+                  }
+                ]
+              },
+              {
+                "name": "Nature",
+                "options": [
+                  {
+                    "value": 1
+                  },
+                  {
+                    "value": 2
+                  },
+                  {
+                    "value": 3
+                  },
+                  {
+                    "value": 4
+                  },
+                  {
+                    "value": 5
+                  },
+                  {
+                    "value": 6
+                  },
+                  {
+                    "value": 7
+                  },
+                  {
+                    "value": 8
+                  },
+                  {
+                    "value": 9
+                  },
+                  {
+                    "value": 10
+                  },
+                  {
+                    "value": 11
+                  },
+                  {
+                    "value": 12
+                  }
+                ]
+              },
+              {
+                "defaultValue": 0,
+                "name": "Custom"
+              }
+            ],
+            "required": true
+          }
+        ]
+      }
+    }
+  ]
+}

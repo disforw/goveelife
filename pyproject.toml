@@ -16,3 +16,7 @@ ignore = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["custom_components.goveelife"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

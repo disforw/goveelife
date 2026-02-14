@@ -1,0 +1,198 @@
+{
+  "github_issue_url": "https://github.com/disforw/goveelife/issues/100",
+  "sku": "H7140",
+  "device": "AA:BB:CC:DD:EE:FF:00:3C",
+  "deviceName": "Smart Ice Maker",
+  "type": "devices.types.humidifier",
+  "capabilities": [
+    {
+      "type": "devices.capabilities.on_off",
+      "instance": "powerSwitch",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.work_mode",
+      "instance": "workMode",
+      "parameters": {
+        "dataType": "STRUCT",
+        "fields": [
+          {
+            "fieldName": "workMode",
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "Manual",
+                "value": 1
+              },
+              {
+                "name": "Custom",
+                "value": 2
+              },
+              {
+                "name": "Auto",
+                "value": 3
+              }
+            ],
+            "required": true
+          },
+          {
+            "fieldName": "modeValue",
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "Manual",
+                "options": [
+                  {
+                    "value": 1
+                  },
+                  {
+                    "value": 2
+                  },
+                  {
+                    "value": 3
+                  },
+                  {
+                    "value": 4
+                  },
+                  {
+                    "value": 5
+                  },
+                  {
+                    "value": 6
+                  },
+                  {
+                    "value": 7
+                  },
+                  {
+                    "value": 8
+                  },
+                  {
+                    "value": 9
+                  }
+                ]
+              },
+              {
+                "defaultValue": 0,
+                "name": "Custom"
+              },
+              {
+                "defaultValue": 0,
+                "name": "Auto"
+              }
+            ],
+            "required": false
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.range",
+      "instance": "humidity",
+      "parameters": {
+        "unit": "unit.percent",
+        "dataType": "INTEGER",
+        "range": {
+          "min": 40,
+          "max": 80,
+          "precision": 1
+        }
+      }
+    },
+    {
+      "type": "devices.capabilities.toggle",
+      "instance": "nightlightToggle",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.range",
+      "instance": "brightness",
+      "parameters": {
+        "dataType": "INTEGER",
+        "range": {
+          "min": 1,
+          "max": 100,
+          "precision": 1
+        }
+      }
+    },
+    {
+      "type": "devices.capabilities.color_setting",
+      "instance": "colorRgb",
+      "parameters": {
+        "dataType": "INTEGER",
+        "range": {
+          "min": 0,
+          "max": 16777215,
+          "precision": 1
+        }
+      }
+    },
+    {
+      "type": "devices.capabilities.mode",
+      "instance": "nightlightScene",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "Forest",
+            "value": 1
+          },
+          {
+            "name": "Ocean",
+            "value": 2
+          },
+          {
+            "name": "Wetland",
+            "value": 3
+          },
+          {
+            "name": "Leisurely",
+            "value": 4
+          },
+          {
+            "name": "Sleep",
+            "value": 5
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.event",
+      "instance": "lackWaterEvent",
+      "alarmType": 51,
+      "eventState": {
+        "options": [
+          {
+            "name": "lack",
+            "value": 1,
+            "message": "Lack of Water"
+          }
+        ]
+      }
+    }
+  ]
+}

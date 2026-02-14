@@ -1,0 +1,280 @@
+{
+  "github_issue_url": "https://github.com/disforw/goveelife/issues/86",
+  "sku": "H705E",
+  "device": "AA:BB:CC:DD:EE:FF:00:35",
+  "deviceName": "Smart Permanent Outdoor Lights",
+  "type": "devices.types.light",
+  "capabilities": [
+    {
+      "type": "devices.capabilities.on_off",
+      "instance": "powerSwitch",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.toggle",
+      "instance": "gradientToggle",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.range",
+      "instance": "brightness",
+      "parameters": {
+        "unit": "unit.percent",
+        "dataType": "INTEGER",
+        "range": {
+          "min": 1,
+          "max": 100,
+          "precision": 1
+        }
+      }
+    },
+    {
+      "type": "devices.capabilities.segment_color_setting",
+      "instance": "segmentedBrightness",
+      "parameters": {
+        "dataType": "STRUCT",
+        "fields": [
+          {
+            "fieldName": "segment",
+            "size": {
+              "min": 1,
+              "max": 27
+            },
+            "dataType": "Array",
+            "elementRange": {
+              "min": 0,
+              "max": 26
+            },
+            "elementType": "INTEGER",
+            "required": true
+          },
+          {
+            "fieldName": "brightness",
+            "dataType": "INTEGER",
+            "range": {
+              "min": 0,
+              "max": 100,
+              "precision": 1
+            },
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.segment_color_setting",
+      "instance": "segmentedColorRgb",
+      "parameters": {
+        "dataType": "STRUCT",
+        "fields": [
+          {
+            "fieldName": "segment",
+            "size": {
+              "min": 1,
+              "max": 27
+            },
+            "dataType": "Array",
+            "elementRange": {
+              "min": 0,
+              "max": 26
+            },
+            "elementType": "INTEGER",
+            "required": true
+          },
+          {
+            "fieldName": "rgb",
+            "dataType": "INTEGER",
+            "range": {
+              "min": 0,
+              "max": 16777215,
+              "precision": 1
+            },
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.color_setting",
+      "instance": "colorRgb",
+      "parameters": {
+        "dataType": "INTEGER",
+        "range": {
+          "min": 0,
+          "max": 16777215,
+          "precision": 1
+        }
+      }
+    },
+    {
+      "type": "devices.capabilities.color_setting",
+      "instance": "colorTemperatureK",
+      "parameters": {
+        "dataType": "INTEGER",
+        "range": {
+          "min": 2700,
+          "max": 6500,
+          "precision": 1
+        }
+      }
+    },
+    {
+      "type": "devices.capabilities.dynamic_scene",
+      "instance": "lightScene",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": []
+      }
+    },
+    {
+      "type": "devices.capabilities.music_setting",
+      "instance": "musicMode",
+      "parameters": {
+        "dataType": "STRUCT",
+        "fields": [
+          {
+            "fieldName": "musicMode",
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "Energic",
+                "value": 1
+              },
+              {
+                "name": "Shiny",
+                "value": 2
+              },
+              {
+                "name": "HeartBeating",
+                "value": 3
+              },
+              {
+                "name": "Hopping",
+                "value": 4
+              },
+              {
+                "name": "Luminous",
+                "value": 5
+              },
+              {
+                "name": "Rolling",
+                "value": 6
+              }
+            ],
+            "required": true
+          },
+          {
+            "unit": "unit.percent",
+            "fieldName": "sensitivity",
+            "dataType": "INTEGER",
+            "range": {
+              "min": 0,
+              "max": 100,
+              "precision": 1
+            },
+            "required": true
+          },
+          {
+            "fieldName": "autoColor",
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ],
+            "required": false
+          },
+          {
+            "fieldName": "rgb",
+            "dataType": "INTEGER",
+            "range": {
+              "min": 0,
+              "max": 16777215,
+              "precision": 1
+            },
+            "required": false
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.dynamic_scene",
+      "instance": "diyScene",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": []
+      }
+    },
+    {
+      "type": "devices.capabilities.dynamic_scene",
+      "instance": "snapshot",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "Bara-veranda",
+            "value": 2886544
+          },
+          {
+            "name": "Troja",
+            "value": 2888745
+          },
+          {
+            "name": "Veranda",
+            "value": 2889717
+          },
+          {
+            "name": "Gr\u00f6n-Lila",
+            "value": 2928564
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.toggle",
+      "instance": "dreamViewToggle",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      }
+    }
+  ]
+}

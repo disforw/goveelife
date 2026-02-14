@@ -1,0 +1,323 @@
+{
+  "github_issue_url": "https://github.com/disforw/goveelife/issues/95",
+  "sku": "H66A0",
+  "device": "AA:BB:CC:DD:EE:FF:00:38",
+  "deviceName": "Smart LED Strip Light",
+  "type": "devices.types.light",
+  "capabilities": [
+    {
+      "type": "devices.capabilities.on_off",
+      "instance": "powerSwitch",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.range",
+      "instance": "brightness",
+      "parameters": {
+        "unit": "unit.percent",
+        "dataType": "INTEGER",
+        "range": {
+          "min": 1,
+          "max": 100,
+          "precision": 1
+        }
+      }
+    },
+    {
+      "type": "devices.capabilities.color_setting",
+      "instance": "colorRgb",
+      "parameters": {
+        "dataType": "INTEGER",
+        "range": {
+          "min": 0,
+          "max": 16777215,
+          "precision": 1
+        }
+      }
+    },
+    {
+      "type": "devices.capabilities.color_setting",
+      "instance": "colorTemperatureK",
+      "parameters": {
+        "dataType": "INTEGER",
+        "range": {
+          "min": 2200,
+          "max": 6500,
+          "precision": 1
+        }
+      }
+    },
+    {
+      "type": "devices.capabilities.toggle",
+      "instance": "gradientToggle",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.segment_color_setting",
+      "instance": "segmentedBrightness",
+      "parameters": {
+        "dataType": "STRUCT",
+        "fields": [
+          {
+            "fieldName": "segment",
+            "size": {
+              "min": 1,
+              "max": 14
+            },
+            "dataType": "Array",
+            "elementRange": {
+              "min": 0,
+              "max": 13
+            },
+            "elementType": "INTEGER",
+            "required": true
+          },
+          {
+            "fieldName": "brightness",
+            "dataType": "INTEGER",
+            "range": {
+              "min": 0,
+              "max": 100,
+              "precision": 1
+            },
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.segment_color_setting",
+      "instance": "segmentedColorRgb",
+      "parameters": {
+        "dataType": "STRUCT",
+        "fields": [
+          {
+            "fieldName": "segment",
+            "size": {
+              "min": 1,
+              "max": 14
+            },
+            "dataType": "Array",
+            "elementRange": {
+              "min": 0,
+              "max": 13
+            },
+            "elementType": "INTEGER",
+            "required": true
+          },
+          {
+            "fieldName": "rgb",
+            "dataType": "INTEGER",
+            "range": {
+              "min": 0,
+              "max": 16777215,
+              "precision": 1
+            },
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.dynamic_scene",
+      "instance": "lightScene",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": []
+      }
+    },
+    {
+      "type": "devices.capabilities.music_setting",
+      "instance": "musicMode",
+      "parameters": {
+        "dataType": "STRUCT",
+        "fields": [
+          {
+            "fieldName": "musicMode",
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "Energic",
+                "value": 0
+              },
+              {
+                "name": "Rhythm",
+                "value": 1
+              },
+              {
+                "name": "Spectrum",
+                "value": 2
+              },
+              {
+                "name": "Rolling",
+                "value": 3
+              },
+              {
+                "name": "Separation",
+                "value": 4
+              },
+              {
+                "name": "Hopping",
+                "value": 5
+              },
+              {
+                "name": "Piano Keys",
+                "value": 6
+              },
+              {
+                "name": "Fountain",
+                "value": 7
+              },
+              {
+                "name": "Day and Night",
+                "value": 8
+              },
+              {
+                "name": "Sprouting",
+                "value": 9
+              },
+              {
+                "name": "Splash",
+                "value": 10
+              },
+              {
+                "name": "Spring",
+                "value": 11
+              },
+              {
+                "name": "Color Painting",
+                "value": 12
+              },
+              {
+                "name": "Beat",
+                "value": 13
+              },
+              {
+                "name": "Windmill",
+                "value": 14
+              },
+              {
+                "name": "Flowing Light",
+                "value": 15
+              }
+            ],
+            "required": true
+          },
+          {
+            "unit": "unit.percent",
+            "fieldName": "sensitivity",
+            "dataType": "INTEGER",
+            "range": {
+              "min": 0,
+              "max": 100,
+              "precision": 1
+            },
+            "required": true
+          },
+          {
+            "fieldName": "autoColor",
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ],
+            "required": false
+          },
+          {
+            "fieldName": "rgb",
+            "dataType": "INTEGER",
+            "range": {
+              "min": 0,
+              "max": 16777215,
+              "precision": 1
+            },
+            "required": false
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.movie_setting",
+      "instance": "movieMode",
+      "parameters": {
+        "dataType": "STRUCT",
+        "fields": [
+          {
+            "fieldName": "movieMode",
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "Game",
+                "value": 0
+              }
+            ],
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "devices.capabilities.dynamic_scene",
+      "instance": "diyScene",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": []
+      }
+    },
+    {
+      "type": "devices.capabilities.dynamic_scene",
+      "instance": "snapshot",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": []
+      }
+    },
+    {
+      "type": "devices.capabilities.toggle",
+      "instance": "dreamViewToggle",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      }
+    }
+  ]
+}
