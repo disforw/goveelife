@@ -191,11 +191,6 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
                             self._available_scenes,
                         )
 
-                elif cap["type"] == "devices.capabilities.diy_color_setting":
-                    if cap["instance"] == "diyScene":
-                        self._has_dynamic_scenes = True
-                        _LOGGER.info("%s - %s: DIY scene capability detected", self._api_id, self._identifier)
-
                 elif cap["type"] == "devices.capabilities.music_setting":
                     _LOGGER.debug("%s - %s: Found music_setting capability", self._api_id, self._identifier)
                     pass  # TO-BE-DONE: implement as select entity type
@@ -285,7 +280,7 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
     @property
     def effect_list(self) -> list[str] | None:
         """Return the list of supported effects."""
-        if not self._support_scenes and not self._diy_scenes:
+        if not self._support_scenes:
             _LOGGER.debug("%s - %s: effect_list - no scene support", self._api_id, self._identifier)
             return None
 
