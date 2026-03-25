@@ -167,7 +167,14 @@ class GoveeLifeHumidifier(HumidifierEntity, GoveeLifePlatformEntity):
     @property
     def is_on(self) -> bool:
         """Return true if entity is on."""
-        return self.state == STATE_ON
+        value = GoveeAPI_GetCachedStateValue(
+            self.hass,
+            self._entry_id,
+            self._device_cfg.get("device"),
+            "devices.capabilities.on_off",
+            "powerSwitch",
+        )
+        return self._state_mapping.get(value) == STATE_ON
 
     @property
     def mode(self) -> str | None:
