@@ -739,7 +739,7 @@ class GoveeLifeSegmentLight(GoveeLifeLight):
                 if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, cap):
                     self.async_write_ha_state()
             elif ATTR_BRIGHTNESS in kwargs and self._support_segmented_brightness:
-                bval = math.ceil(brightness_to_value((0, 100), kwargs[ATTR_BRIGHTNESS]))
+                bval = math.ceil(brightness_to_value((1, 100), kwargs[ATTR_BRIGHTNESS]))
                 cap = {
                     "type": "devices.capabilities.segment_color_setting",
                     "instance": "segmentedBrightness",
@@ -748,8 +748,18 @@ class GoveeLifeSegmentLight(GoveeLifeLight):
                 if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, cap):
                     self.async_write_ha_state()
             else:
-                # No specific segment attribute — turn on the parent device if it's off
-                if not self.is_on:
+                # No specific segment attribute provided.
+                # For RGB segments: restore to white if segment is currently off (rgb=0).
+                # For brightness-only segments: delegate to parent power switch.
+                if self._support_segmented_rgb and not self.is_on:
+                    cap = {
+                        "type": "devices.capabilities.segment_color_setting",
+                        "instance": "segmentedColorRgb",
+                        "value": {"segment": [self._segment_index], "rgb": 0xFFFFFF},
+                    }
+                    if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, cap):
+                        self.async_write_ha_state()
+                elif not self.is_on:
                     await super().async_turn_on(**kwargs)
         except Exception as e:
             _LOGGER.error(
@@ -763,6 +773,7 @@ class GoveeLifeSegmentLight(GoveeLifeLight):
     async def async_turn_off(self, **kwargs) -> None:
         """Async: Turn segment off."""
         try:
+            sent = False
             if self._support_segmented_brightness:
                 cap = {
                     "type": "devices.capabilities.segment_color_setting",
@@ -770,15 +781,21 @@ class GoveeLifeSegmentLight(GoveeLifeLight):
                     "value": {"segment": [self._segment_index], "brightness": 0},
                 }
                 if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, cap):
-                    self.async_write_ha_state()
-            elif self._support_segmented_rgb:
+                    sent = True
+            if self._support_segmented_rgb:
+                # Always send rgb=0 when RGB is supported.
+                # On RGBIC devices (e.g. H60A4), brightness=0 alone does not fully
+                # extinguish the LEDs — hardware clamps to ~1% minimum luminance.
+                # Sending rgb=0 (black) is required to actually turn the segment off.
                 cap = {
                     "type": "devices.capabilities.segment_color_setting",
                     "instance": "segmentedColorRgb",
                     "value": {"segment": [self._segment_index], "rgb": 0},
                 }
                 if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, cap):
-                    self.async_write_ha_state()
+                    sent = True
+            if sent:
+                self.async_write_ha_state()
         except Exception as e:
             _LOGGER.error(
                 "%s - %s: async_turn_off (segment %d) failed: %s",
