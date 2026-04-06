@@ -1,52 +1,150 @@
-# GoveeLife Home Assistant Custom Integration
-This custom Home Assistant integration is a work in progress that uses the newly released API 2.0 by Govee. Feel free to contribute, all help is appreciated.
+# GoveeLife — Home Assistant Integration
 
-## Supported Devices 
-* Lights - Light entity, color selection, dimming, effects
-* Heaters - Climate, power, oscillation
-* Air Purifiers - Fan entity, presets
-* Fans - Fan entity, presets
-* Ice Maker - power switch
-* Aroma Diffuser - power switch
-* Socket - power switch
-* Tea Kettles - Climate, power switch
+A community-maintained [HACS](https://hacs.xyz) custom integration that connects your Govee smart home devices to Home Assistant via the [Govee OpenAPI v2](https://developer.govee.com/).
 
-## Installing
-You can install this integration with HACS or manually.
-### HACS
-After installing HACS ([click here for instructions](https://www.hacs.xyz/docs/use/)), add a custom repository using the steps below.
-#### Add the custom repo
-  - Click on the 3 dots in the top right corner.
-  - Select "Custom repositories"
-  - Add the URL to the repository.
-  - Select the correct type.
-  - Click the "ADD" button.
-#### Download the Integration
-  - When taken back to the HACS list, search for "goveelife"
-  - In the list, click the three dots on the "goveelife" row
-  - Click download
-  - Choose a specific version if needed.
-  - Click download
-  - When complete, restart Home Assistant if needed.
-More info can be found (here)[https://hacs.xyz/docs/faq/custom_repositories/] if needed.
+> **Current version:** v4.B3 (pre-release) · [Changelog](https://github.com/disforw/goveelife/releases)
 
-### Manually
-Copy the custom_components/goveelife to your custom_components folder. Reboot Home Assistant and configure the 'goveelife' integration via the integrations page.
+---
 
-### Configuration
-When you add the goveelife integration, you will be prompted for an API key. To get this, you will need to:
-1. Open the 'Govee Home' app on your smartphone
-2. Login or create an account
-3. Open the settings and tap "Apply for an API key"
-4. Check your email to find the API key and use it when adding this integration to your Home Assistant instance.
+## Supported Device Types
 
-Note: the integration has the option of changing the polling frequence which is how often it will hit the Govee API to check for updates. If you set this value too low, you will be rate limited and you will not be able to control your devices.
+The integration auto-discovers all devices on your Govee account and creates entities based on each device's reported capabilities. No SKU hardcoding — if your device exposes a capability through the API, it will be available in HA.
 
-## How can YOU help?
-I need API responses so I can continue to build out this integration. You can provide these resonses by opening an "issue" at the top of this repository. It's pretty simple. Use any online API query tool, and submit a GET requ
-est to "https://openapi.api.govee.com/router/api/v1/user/devices". Make sure you include a single header called "Govee-API-Key" which should contain your API key aquired in your Govee app.
-When you submit the reponse as an issue above, make sure you alter any MAC addresses, and DO NOT incluse your API key in the post!
+| Device Type | HA Platform | Capabilities |
+|---|---|---|
+| **Lights** | `light` | On/off, brightness, RGB color, color temperature, scenes, DIY scenes, RGBIC segments |
+| **Heaters** | `climate` | On/off, target temperature, current temperature, HVAC mode |
+| **Tea Kettles** | `climate` | On/off, target temperature |
+| **Air Purifiers** | `fan` | On/off, preset modes |
+| **Fans** | `fan` | On/off, speed, preset modes, oscillation |
+| **Humidifiers** | `humidifier` | On/off, target humidity, preset modes, humidity/temperature sensors |
+| **Ice Makers** | `switch` | On/off |
+| **Aroma Diffusers** | `switch` | On/off |
+| **Smart Plugs / Sockets** | `switch` | On/off |
+| **Wi-Fi Thermometers** | `sensor` | Temperature, humidity |
 
+### RGBIC / Segmented Lights
 
-For many folks setting up something like Postman or whatever to do the API call may be overkill... I'm pretty sure all Mac OSX, Linux and Windows 11 come with cURL installed by default...
-curl -H 'Govee-API-Key: YOURKEYHERE' -o 'Govee API response.json' -X GET https://openapi.api.govee.com/router/api/v1/user/devices
+Devices with per-zone LED control (such as ceiling panels and backlight kits) get individual segment entities — one `light` entity per zone — in addition to the main device entity. Segments support independent color and brightness control.
+
+Confirmed segmented devices: H6076, H60A1, H60A4, H60B2, H70C7, H7075 and any device exposing `segment_color_setting` in the API.
+
+---
+
+## Installation
+
+### Via HACS (recommended)
+
+1. Make sure [HACS is installed](https://www.hacs.xyz/docs/use/).
+2. In the HACS UI, click the **⋮ menu** (top-right) → **Custom repositories**.
+3. Add `https://github.com/disforw/goveelife` as type **Integration** and click **Add**.
+4. Search for **goveelife** in HACS and click **Download**.
+5. Restart Home Assistant.
+
+### Manual
+
+1. Download or clone this repository.
+2. Copy the `custom_components/goveelife` folder into your HA `config/custom_components/` directory.
+3. Restart Home Assistant.
+
+---
+
+## Configuration
+
+### 1. Get your Govee API key
+
+1. Open the **Govee Home** app on your phone.
+2. Go to **Settings** → **Apply for API Key**.
+3. Check your email — Govee will send the key within a few minutes.
+
+> **Note:** The Govee API has rate limits. Setting the poll interval too low will result in throttling. The default interval is recommended for most setups; 60–120 seconds is a good starting point.
+
+### 2. Add the integration
+
+1. In Home Assistant, go to **Settings → Devices & Services → Add Integration**.
+2. Search for **GoveeLife** and follow the prompts.
+3. Enter your API key.
+4. Optionally set the **poll interval** (in seconds). A lower value gives faster state updates but increases API calls.
+
+Once configured, the integration will discover all devices on your Govee account and add them to HA automatically.
+
+---
+
+## Features
+
+### Lights
+
+- **On/off** — basic power control
+- **Brightness** — full 1–100% range via HA brightness slider
+- **RGB color** — full color wheel support
+- **Color temperature** — warm/cool white adjustment (where supported by hardware)
+- **Scenes** — Govee built-in lighting scenes (dynamic effects like "Ocean", "Sunset", etc.)
+- **DIY scenes** — your custom scenes from the Govee Home app
+- **Per-segment control** — on RGBIC devices, each zone is a separate `light` entity with independent color and brightness
+
+### Fans
+
+- On/off, speed levels, preset modes (Normal, Sleep, Auto, etc.)
+- Oscillation toggle (H7102, H7106, H7120 and compatible models)
+
+### Climate (Heaters & Kettles)
+
+- On/off, HVAC mode, target and current temperature
+
+### Humidifiers
+
+- On/off, target humidity, preset modes
+- `sensor` entities for `sensorHumidity` and `sensorTemperature` where the device exposes them
+
+### Diagnostics
+
+The integration includes a [HA Diagnostics](https://www.home-assistant.io/integrations/diagnostics/) endpoint. If you're reporting a bug, please include the diagnostics download — it contains your full device capability dump (with sensitive data redacted).
+
+---
+
+## Troubleshooting
+
+### My device isn't showing up
+
+- Make sure the device is visible in the Govee Home app and linked to your account.
+- Not all Govee devices are supported by the cloud API. Check the [Govee Developer site](https://developer.govee.com/) for API coverage.
+- Try refreshing the integration: **Settings → Devices & Services → GoveeLife → ⋮ → Reload**.
+
+### Controls aren't working / state is wrong
+
+- The Govee cloud API has rate limits (~10 requests/minute per device). If you're hitting limits, Home Assistant will show stale state until the next successful poll.
+- Check the HA logs (`Settings → System → Logs`) for `goveelife` errors.
+
+### Segments won't turn off (RGBIC devices like H60A4)
+
+- This was a bug in v4.B2 and v4.B3 — segments would clamp to ~1% brightness instead of fully turning off.
+- Fixed in the current `main` branch (see [PR #134 fix](https://github.com/disforw/goveelife/issues/134)).
+
+### I want to help / my device isn't supported
+
+The more API response data we have, the more devices we can support. If your device isn't working or is missing features, please open an issue and include your device's API response:
+
+```bash
+curl -H 'Govee-API-Key: YOUR_KEY_HERE' \
+     -X GET https://openapi.api.govee.com/router/api/v1/user/devices \
+     -o govee_devices.json
+```
+
+Attach the `govee_devices.json` to your issue. **Remove your API key and sanitize any MAC addresses before posting.**
+
+---
+
+## Contributing
+
+Pull requests are welcome. Please:
+
+- Open an issue first to discuss significant changes.
+- Follow the existing code style (async, type hints, HA patterns).
+- Test against a real device if possible — the Govee API doesn't have a sandbox.
+
+---
+
+## Credits
+
+Maintained by [@disforw](https://github.com/disforw) with contributions from the community.  
+Uses the [Govee OpenAPI v2](https://developer.govee.com/).
