@@ -311,8 +311,12 @@ async def async_GoveeAPI_ControlDevice(
                     if cap["type"] == new_cap["type"] and cap["instance"] == new_cap["instance"]:
                         entry_data[CONF_STATE][d]["capabilities"].remove(cap)
                         entry_data[CONF_STATE][d]["capabilities"].append(new_cap)
-                        _LOGGER.debug("%s - async_GoveeAPI_ControlDevice: updated old capability state: %s", entry_id, cap)
-                        _LOGGER.debug("%s - async_GoveeAPI_ControlDevice: with new capability state: %s", entry_id, new_cap)
+                        _LOGGER.debug(
+                            "%s - async_GoveeAPI_ControlDevice: updated old capability state: %s", entry_id, cap
+                        )
+                        _LOGGER.debug(
+                            "%s - async_GoveeAPI_ControlDevice: with new capability state: %s", entry_id, new_cap
+                        )
                         cache_updated = True
                         break
                 if not cache_updated:
@@ -329,7 +333,9 @@ async def async_GoveeAPI_ControlDevice(
                     str(cache_err),
                 )
         else:
-            _LOGGER.debug("%s - async_GoveeAPI_ControlDevice: response has no capability key — skipping cache update", entry_id)
+            _LOGGER.debug(
+                "%s - async_GoveeAPI_ControlDevice: response has no capability key — skipping cache update", entry_id
+            )
 
         # Return True as long as the API accepted the command
         return True
