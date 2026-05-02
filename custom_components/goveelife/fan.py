@@ -92,6 +92,7 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
         self._speed_name_to_mode_value = {}
         self._manual_work_mode = 1
         self._sleep_work_mode = None
+        self._flat_work_mode = False
         self._attr_supported_features = 0
         self._support_oscillation = False
         super().__init__(hass, entry, coordinator, device_cfg, **kwargs)
@@ -146,6 +147,7 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
         flat_work_mode = bool(work_mode_options) and not gear_modes and not any_named_modevalue
 
         if flat_work_mode:
+            self._flat_work_mode = True
             _LOGGER.debug(
                 "%s - %s: Detected flat-workMode device — treating workMode options as speed levels",
                 self._api_id,
@@ -372,10 +374,11 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
             return STATE_UNKNOWN
 
         # For flat-workMode devices the workMode value IS the speed/preset name
-        if work_mode in self._speed_mapping and self._manual_work_mode not in self._speed_mapping:
+        if self._flat_work_mode:
             speed_name = self._speed_mapping.get(work_mode)
             if speed_name:
                 return speed_name
+            return STATE_UNKNOWN
 
         # Standard nested structure
         if work_mode == self._manual_work_mode:
@@ -418,7 +421,7 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
             return None
 
         # For flat-workMode devices the workMode value maps directly to a speed name
-        if work_mode in self._speed_mapping and self._manual_work_mode not in self._speed_mapping:
+        if self._flat_work_mode:
             speed_name = self._speed_mapping.get(work_mode)
             if speed_name and self._ordered_named_fan_speeds:
                 return ordered_list_item_to_percentage(self._ordered_named_fan_speeds, speed_name)
@@ -480,8 +483,7 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
             return
 
         # For flat-workMode devices mode_value IS the workMode; no nested modeValue needed
-        flat = self._manual_work_mode not in self._speed_mapping and mode_value in self._speed_mapping
-        if flat:
+        if self._flat_work_mode:
             state_capability = {
                 "type": "devices.capabilities.work_mode",
                 "instance": "workMode",
