@@ -2,8 +2,6 @@
 
 A community-maintained [HACS](https://hacs.xyz) custom integration that connects your Govee smart home devices to Home Assistant via the [Govee OpenAPI v2](https://developer.govee.com/).
 
-> **Current version:** v4.B3 (pre-release) · [Changelog](https://github.com/disforw/goveelife/releases)
-
 ---
 
 ## Supported Device Types
