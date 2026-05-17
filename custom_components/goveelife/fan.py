@@ -122,9 +122,12 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                     if capFieldWork["fieldName"] == "workMode":
                         for workOption in capFieldWork.get("options", []):
                             work_mode_options.append({"name": workOption["name"], "value": workOption["value"]})
-                            if workOption["name"].lower() in ["manual", "gearmode"]:
+                            if workOption["name"].lower() in ["manual", "gearmode", "fanspeed"]:
                                 manual_work_mode = workOption["value"]
                     elif capFieldWork["fieldName"] == "modeValue":
+                        # Build reverse lookup for workMode value -> name
+                        work_mode_value_to_name = {opt["value"]: opt["name"] for opt in work_mode_options}
+                        
                         for valueOption in capFieldWork.get("options", []):
                             if valueOption["name"] == "gearMode":
                                 for gearOption in valueOption.get("options", []):
@@ -132,13 +135,22 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                                     gear_name = gearOption.get("name") or f"Speed {gearOption['value']}"
                                     gear_modes.append({"name": gear_name, "value": gearOption["value"]})
                             elif valueOption.get("options"):
-                                # Another manual-mode sub-option block with options
-                                sub_has_names = any(o.get("name") for o in valueOption["options"])
-                                if sub_has_names:
-                                    any_named_modevalue = True
-                                for subOpt in valueOption["options"]:
-                                    sub_name = subOpt.get("name") or f"Speed {subOpt['value']}"
-                                    gear_modes.append({"name": sub_name, "value": subOpt["value"]})
+                                # Check if this modeValue option corresponds to the manual work mode
+                                value_option_name_to_check = work_mode_value_to_name.get(valueOption.get("value", 0))
+                                if value_option_name_to_check and manual_work_mode is not None:
+                                    # Check if this is the manual work mode by value lookup
+                                    is_manual_mode = valueOption.get("value", 0) == manual_work_mode
+                                    # Also check by name match (for cases where valueOption doesn't have a value field)
+                                    name_match = value_option_name_to_check and value_option_name_to_check.lower() in ["manual", "gearmode", "fanspeed"]
+                                    
+                                    if is_manual_mode or name_match:
+                                        # Another manual-mode sub-option block with options
+                                        sub_has_names = any(o.get("name") for o in valueOption["options"])
+                                        if sub_has_names:
+                                            any_named_modevalue = True
+                                        for subOpt in valueOption["options"]:
+                                            sub_name = subOpt.get("name") or f"Speed {subOpt['value']}"
+                                            gear_modes.append({"name": sub_name, "value": subOpt["value"]})
 
         # --- Fix 3: detect "flat workMode" devices ---
         # A flat-workMode device has workMode options but NO gearMode sub-options AND
@@ -219,6 +231,9 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                 # For flat-workMode, _manual_work_mode is unused (we look up by speed name)
             else:
                 # Standard nested gearMode / modeValue structure
+                # Build reverse lookup for workMode value -> name for checking if modeValue option corresponds to manual mode
+                work_mode_value_to_name = {opt["value"]: opt["name"] for opt in work_mode_options}
+                
                 for capFieldWork in work_mode_cap["parameters"]["fields"]:
                     if capFieldWork["fieldName"] == "modeValue":
                         for valueOption in capFieldWork.get("options", []):
@@ -240,29 +255,56 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                                             gear_modes[-1]["value"],
                                         )
                             elif valueOption["name"] != "Custom" and valueOption["name"] != "gearMode":
-                                # Other modes like Sleep, Auto, etc.
-                                work_mode_value = self._attr_preset_modes_mapping.get(valueOption["name"])
-                                if work_mode_value is not None:
-                                    self._attr_preset_modes.append(valueOption["name"])
-                                    self._attr_preset_modes_mapping_set[valueOption["name"]] = {
-                                        "workMode": work_mode_value,
-                                        "modeValue": valueOption.get("value", 0),
-                                    }
-                                    if valueOption["name"].lower() == "sleep":
-                                        self._sleep_work_mode = work_mode_value
-                                        _LOGGER.debug(
-                                            "%s - %s: Found sleep mode: workMode = %s",
+                                # Check if this modeValue option name corresponds to the manual work mode name
+                                value_option_is_manual_mode = (
+                                    work_mode_value_to_name.get(valueOption.get("value", 0)) == work_mode_value_to_name.get(manual_work_mode)
+                                    and manual_work_mode is not None
+                                )
+                                # Also check direct name match with known manual mode names
+                                name_match = valueOption["name"].lower() in ["manual", "gearmode", "fanspeed"]
+                                
+                                if value_option_is_manual_mode or name_match:
+                                    # This is the manual work mode (like FanSpeed for H7106)
+                                    if manual_work_mode is not None:
+                                        if has_power_control:
+                                            self._attr_preset_modes.append("Off")
+                                        self._attr_preset_modes.append("Manual")
+                                        if gear_modes:
+                                            self._attr_preset_modes_mapping_set["Manual"] = {
+                                                "workMode": manual_work_mode,
+                                                "modeValue": gear_modes[-1]["value"],
+                                            }
+                                            _LOGGER.debug(
+                                                "%s - %s: Manual preset defaults to %s (modeValue %s) - detected by name match",
+                                                self._api_id,
+                                                self._identifier,
+                                                gear_modes[-1]["name"],
+                                                gear_modes[-1]["value"],
+                                            )
+                                elif valueOption["name"] != "Custom":
+                                    # Other modes like Sleep, Auto, etc.
+                                    work_mode_value = self._attr_preset_modes_mapping.get(valueOption["name"])
+                                    if work_mode_value is not None:
+                                        self._attr_preset_modes.append(valueOption["name"])
+                                        self._attr_preset_modes_mapping_set[valueOption["name"]] = {
+                                            "workMode": work_mode_value,
+                                            "modeValue": valueOption.get("value", 0),
+                                        }
+                                        if valueOption["name"].lower() == "sleep":
+                                            self._sleep_work_mode = work_mode_value
+                                            _LOGGER.debug(
+                                                "%s - %s: Found sleep mode: workMode = %s",
+                                                self._api_id,
+                                                self._identifier,
+                                                work_mode_value,
+                                            )
+                                    else:
+                                        _LOGGER.warning(
+                                            "%s - %s: _init_platform_specific: Could not find workMode for %s",
                                             self._api_id,
                                             self._identifier,
-                                            work_mode_value,
+                                            valueOption["name"],
                                         )
-                                else:
-                                    _LOGGER.warning(
-                                        "%s - %s: _init_platform_specific: Could not find workMode for %s",
-                                        self._api_id,
-                                        self._identifier,
-                                        valueOption["name"],
-                                    )
 
                 # Map gear modes to ordered list for percentage conversion
                 if gear_modes:
