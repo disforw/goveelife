@@ -105,6 +105,9 @@ async def async_GoveeAPI_GETRequest(hass: HomeAssistant, entry_id: str, path: st
                 _LOGGER.debug("%s - async_GoveeAPI_GETRequest: convert resulting json to object", entry_id)
                 return (await r.json())["data"]
 
+    except (TimeoutError, aiohttp.ClientConnectionError, aiohttp.ServerDisconnectedError):
+        _LOGGER.warning("%s - async_GoveeAPI_GETRequest: Govee API unreachable, will retry on next poll", entry_id)
+        return None
     except Exception as e:
         _LOGGER.error(
             "%s - async_GoveeAPI_GETRequest: Failed: %s (%s.%s)",
@@ -157,6 +160,9 @@ async def async_GoveeAPI_POSTRequest(
 
                 return await r.json()
 
+    except (TimeoutError, aiohttp.ClientConnectionError, aiohttp.ServerDisconnectedError):
+        _LOGGER.warning("%s - async_GoveeAPI_POSTRequest: Govee API unreachable, will retry on next poll", entry_id)
+        return None
     except Exception as e:
         _LOGGER.error(
             "%s - async_GoveeAPI_POSTRequest: Failed: %s (%s.%s)",

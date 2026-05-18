@@ -151,6 +151,9 @@ class GoveeLifePlatformEntity(CoordinatorEntity, Entity):
                         value = cap_state.get("value", False)
             # _LOGGER.debug("%s - %s: available result: %s", self._api_id, self._identifier, value)
             return value
+        except KeyError:
+            # State not yet populated (e.g. API unreachable on startup) — not an error
+            return False
         except Exception as e:
             _LOGGER.error(
                 "%s - available: Failed: %s (%s.%s)", self._entry_id, str(e), e.__class__.__module__, type(e).__name__
@@ -196,6 +199,12 @@ class GoveeAPIUpdateCoordinator(DataUpdateCoordinator):
             entry_data = self.hass.data[DOMAIN][self._entry_id]
             async with asyncio.timeout(entry_data[CONF_PARAMS][CONF_TIMEOUT]):
                 result = await async_GoveeAPI_GetDeviceState(self.hass, self._entry_id, self._device_cfg, True)
+        except TimeoutError:
+            _LOGGER.warning(
+                "%s - GoveeAPIUpdateCoordinator: Govee API unreachable (timeout), will retry on next poll",
+                self._entry_id,
+            )
+            return False
         except Exception as e:
             _LOGGER.error(
                 "%s - GoveeAPIUpdateCoordinator: _async_update_data Failed: %s (%s.%s)",
