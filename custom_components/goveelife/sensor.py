@@ -130,7 +130,13 @@ class GoveeLifeSensor(GoveeLifePlatformEntity):
             self._attr_native_unit_of_measurement = PERCENTAGE
         elif self._capability_name == "sensorTemperature":
             self._attr_device_class = SensorDeviceClass.TEMPERATURE
-            self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+            # The Govee API delivers sensorTemperature values in Fahrenheit regardless
+            # of the device's market region. Declaring FAHRENHEIT here lets HA's built-in
+            # unit conversion display the correct value in the user's preferred unit
+            # (°C or °F) without any manual conversion in this integration.
+            # Note: we have not confirmed whether devices sold outside the US also
+            # report in °F — if reports indicate otherwise this may need revisiting.
+            self._attr_native_unit_of_measurement = UnitOfTemperature.FAHRENHEIT
         elif self._capability_name == "carbonDioxideConcentration":
             self._attr_device_class = SensorDeviceClass.CO2
             self._attr_native_unit_of_measurement = CONCENTRATION_PARTS_PER_MILLION
