@@ -91,6 +91,7 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
         self._speed_mapping = {}
         self._speed_name_to_mode_value = {}
         self._manual_work_mode = 1
+        self._manual_preset_name = "Manual"
         self._sleep_work_mode = None
         self._flat_work_mode = False
         self._attr_supported_features = 0
@@ -124,6 +125,7 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                             work_mode_options.append({"name": workOption["name"], "value": workOption["value"]})
                             if workOption["name"].lower() in ["manual", "gearmode", "fanspeed"]:
                                 manual_work_mode = workOption["value"]
+                                self._manual_preset_name = workOption["name"]
                     elif capFieldWork["fieldName"] == "modeValue":
                         # Build reverse lookup for workMode value -> name
                         work_mode_value_to_name = {opt["value"]: opt["name"] for opt in work_mode_options}
@@ -135,6 +137,12 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                                     gear_name = gearOption.get("name") or f"Speed {gearOption['value']}"
                                     gear_modes.append({"name": gear_name, "value": gearOption["value"]})
                             elif valueOption.get("options"):
+                                if valueOption["name"].lower() in ["manual", "gearmode", "fanspeed"]:
+                                    for subOpt in valueOption["options"]:
+                                        sub_name = subOpt.get("name") or f"Speed {subOpt['value']}"
+                                        gear_modes.append({"name": sub_name, "value": subOpt["value"]})
+                                    continue
+
                                 # Check if this modeValue option corresponds to the manual work mode
                                 value_option_name_to_check = work_mode_value_to_name.get(valueOption.get("value", 0))
                                 if value_option_name_to_check and manual_work_mode is not None:
@@ -241,9 +249,9 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                                 if manual_work_mode is not None:
                                     if has_power_control:
                                         self._attr_preset_modes.append("Off")
-                                    self._attr_preset_modes.append("Manual")
+                                    self._attr_preset_modes.append(self._manual_preset_name)
                                     if gear_modes:
-                                        self._attr_preset_modes_mapping_set["Manual"] = {
+                                        self._attr_preset_modes_mapping_set[self._manual_preset_name] = {
                                             "workMode": manual_work_mode,
                                             "modeValue": gear_modes[-1]["value"],
                                         }
@@ -254,7 +262,7 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                                             gear_modes[-1]["name"],
                                             gear_modes[-1]["value"],
                                         )
-                            elif valueOption["name"] != "Custom" and valueOption["name"] != "gearMode":
+                            elif valueOption["name"] != "gearMode":
                                 # Check if this modeValue option name corresponds to the manual work mode name
                                 value_option_is_manual_mode = (
                                     work_mode_value_to_name.get(valueOption.get("value", 0)) == work_mode_value_to_name.get(manual_work_mode)
@@ -268,9 +276,9 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                                     if manual_work_mode is not None:
                                         if has_power_control:
                                             self._attr_preset_modes.append("Off")
-                                        self._attr_preset_modes.append("Manual")
+                                        self._attr_preset_modes.append(self._manual_preset_name)
                                         if gear_modes:
-                                            self._attr_preset_modes_mapping_set["Manual"] = {
+                                            self._attr_preset_modes_mapping_set[self._manual_preset_name] = {
                                                 "workMode": manual_work_mode,
                                                 "modeValue": gear_modes[-1]["value"],
                                             }
@@ -281,14 +289,17 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                                                 gear_modes[-1]["name"],
                                                 gear_modes[-1]["value"],
                                             )
-                                elif valueOption["name"] != "Custom":
-                                    # Other modes like Sleep, Auto, etc.
+                                else:
+                                    # Other modes like Sleep, Auto, Custom, etc.
                                     work_mode_value = self._attr_preset_modes_mapping.get(valueOption["name"])
                                     if work_mode_value is not None:
+                                        mode_value = valueOption.get("defaultValue", valueOption.get("value", 0))
+                                        if mode_value == 0 and valueOption.get("options"):
+                                            mode_value = valueOption["options"][0].get("value", 0)
                                         self._attr_preset_modes.append(valueOption["name"])
                                         self._attr_preset_modes_mapping_set[valueOption["name"]] = {
                                             "workMode": work_mode_value,
-                                            "modeValue": valueOption.get("value", 0),
+                                            "modeValue": mode_value,
                                         }
                                         if valueOption["name"].lower() == "sleep":
                                             self._sleep_work_mode = work_mode_value
@@ -320,7 +331,15 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                         self._identifier,
                         self._ordered_named_fan_speeds,
                     )
+                    self._attr_percentage_step = 100 / len(self._ordered_named_fan_speeds)
                     _LOGGER.debug("%s - %s: Speed mapping: %s", self._api_id, self._identifier, self._speed_mapping)
+
+    @property
+    def speed_count(self) -> int | None:
+        """Return the number of discrete fan speeds."""
+        if self._ordered_named_fan_speeds:
+            return len(self._ordered_named_fan_speeds)
+        return None
 
     @property
     def state(self) -> str | None:
@@ -424,7 +443,7 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
 
         # Standard nested structure
         if work_mode == self._manual_work_mode:
-            return "Manual"
+            return self._manual_preset_name
 
         v = {"workMode": work_mode, "modeValue": mode_value}
         return next(
