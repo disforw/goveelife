@@ -129,7 +129,7 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                     elif capFieldWork["fieldName"] == "modeValue":
                         # Build reverse lookup for workMode value -> name
                         work_mode_value_to_name = {opt["value"]: opt["name"] for opt in work_mode_options}
-                        
+
                         for valueOption in capFieldWork.get("options", []):
                             if valueOption["name"] == "gearMode":
                                 for gearOption in valueOption.get("options", []):
@@ -150,7 +150,7 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                                     is_manual_mode = valueOption.get("value", 0) == manual_work_mode
                                     # Also check by name match (for cases where valueOption doesn't have a value field)
                                     name_match = value_option_name_to_check and value_option_name_to_check.lower() in ["manual", "gearmode", "fanspeed"]
-                                    
+
                                     if is_manual_mode or name_match:
                                         # Another manual-mode sub-option block with options
                                         sub_has_names = any(o.get("name") for o in valueOption["options"])
@@ -241,7 +241,7 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                 # Standard nested gearMode / modeValue structure
                 # Build reverse lookup for workMode value -> name for checking if modeValue option corresponds to manual mode
                 work_mode_value_to_name = {opt["value"]: opt["name"] for opt in work_mode_options}
-                
+
                 for capFieldWork in work_mode_cap["parameters"]["fields"]:
                     if capFieldWork["fieldName"] == "modeValue":
                         for valueOption in capFieldWork.get("options", []):
@@ -270,7 +270,7 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                                 )
                                 # Also check direct name match with known manual mode names
                                 name_match = valueOption["name"].lower() in ["manual", "gearmode", "fanspeed"]
-                                
+
                                 if value_option_is_manual_mode or name_match:
                                     # This is the manual work mode (like FanSpeed for H7106)
                                     if manual_work_mode is not None:
