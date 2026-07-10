@@ -20,6 +20,7 @@ The integration auto-discovers all devices on your Govee account and creates ent
 | **Aroma Diffusers** | `switch` | On/off |
 | **Smart Plugs / Sockets** | `switch` | On/off |
 | **Wi-Fi Thermometers** | `sensor` | Temperature, humidity |
+| **Pool Thermometers** | `sensor` | Temperature, humidity |
 
 ### RGBIC / Segmented Lights
 
