@@ -88,6 +88,7 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
         self._attr_preset_modes_mapping = {}
         self._attr_preset_modes_mapping_set = {}
         self._range_temperature_unit = None
+        self._temperature_setting_instance = None
         super().__init__(hass, entry, coordinator, device_cfg, **kwargs)
 
     def _init_platform_specific(self, **kwargs):
@@ -122,6 +123,7 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
                 cap["instance"] in ["targetTemperature", "sliderTemperature"]
             ):
                 self._attr_supported_features |= ClimateEntityFeature.TARGET_TEMPERATURE
+                self._temperature_setting_instance = cap["instance"]
                 for field in cap["parameters"]["fields"]:
                     if field["fieldName"] == "temperature":
                         self._attr_max_temp = field["range"]["max"]
@@ -307,17 +309,21 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
 
     async def async_set_temperature(self, **kwargs) -> None:
         """Set new target temperature."""
+        instance = self._temperature_setting_instance or "targetTemperature"
         value = GoveeAPI_GetCachedStateValue(
             self.hass,
             self._entry_id,
             self._device_cfg.get("device"),
             "devices.capabilities.temperature_setting",
-            "targetTemperature",
+            instance,
         )
-        unit = value.get("unit", "Celsius")
+        # devices exposing only sliderTemperature have no targetTemperature state to read back,
+        # so fall back to the unit the entity itself reports rather than assuming Celsius
+        default_unit = "Fahrenheit" if self.temperature_unit == UnitOfTemperature.FAHRENHEIT else "Celsius"
+        unit = (value or {}).get("unit", default_unit)
         state_capability = {
             "type": "devices.capabilities.temperature_setting",
-            "instance": "targetTemperature",
+            "instance": instance,
             "value": {
                 "temperature": kwargs["temperature"],
                 "unit": unit,

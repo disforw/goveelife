@@ -64,3 +64,34 @@ def test_kettle_bounds_follow_reported_unit(reported_unit, expected_unit, expect
         assert climate.temperature_unit == expected_unit
         assert climate.min_temp == expected_min
         assert climate.max_temp == expected_max
+
+
+@pytest.mark.parametrize(
+    ("cached_state", "expected_unit"),
+    [
+        # normal case: the unit is read back from the device's cached state
+        ({"targetTemperature": 200, "unit": "Fahrenheit"}, "Fahrenheit"),
+        # no cached state: fall back to the unit the entity reports, which is
+        # itself Celsius in this situation - value and unit stay consistent
+        (None, "Celsius"),
+    ],
+)
+async def test_set_temperature_uses_the_instance_the_device_exposes(cached_state, expected_unit):
+    """The H7170 exposes only sliderTemperature; setting must not assume targetTemperature."""
+    device_cfg = _load_device_fixture("h7170_2025-05-31.json")
+
+    with patch("custom_components.goveelife.climate.GoveeAPI_GetCachedStateValue") as cached:
+        cached.return_value = {"targetTemperature": 212, "unit": "Fahrenheit"}
+        climate = _create_climate(device_cfg)
+
+        cached.return_value = cached_state
+        with patch(
+            "custom_components.goveelife.climate.async_GoveeAPI_ControlDevice",
+            new=AsyncMock(return_value=True),
+        ) as control:
+            climate.async_write_ha_state = MagicMock()
+            await climate.async_set_temperature(temperature=200)
+
+    sent = control.await_args.args[3]
+    assert sent["instance"] == "sliderTemperature"
+    assert sent["value"] == {"temperature": 200, "unit": expected_unit}
