@@ -18,6 +18,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.util.unit_conversion import TemperatureConverter
 
 from .const import CONF_COORDINATORS, DOMAIN
 from .entities import GoveeLifePlatformEntity
@@ -86,6 +87,8 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
         self._attr_preset_modes = []
         self._attr_preset_modes_mapping = {}
         self._attr_preset_modes_mapping_set = {}
+        self._range_temperature_unit = None
+        self._temperature_setting_instance = None
         super().__init__(hass, entry, coordinator, device_cfg, **kwargs)
 
     def _init_platform_specific(self, **kwargs):
@@ -120,6 +123,7 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
                 cap["instance"] in ["targetTemperature", "sliderTemperature"]
             ):
                 self._attr_supported_features |= ClimateEntityFeature.TARGET_TEMPERATURE
+                self._temperature_setting_instance = cap["instance"]
                 for field in cap["parameters"]["fields"]:
                     if field["fieldName"] == "temperature":
                         self._attr_max_temp = field["range"]["max"]
@@ -127,6 +131,9 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
                         self._attr_target_temperature_step = field["range"]["precision"]
                     elif field["fieldName"] == "unit":
                         self._attr_temperature_unit = UnitOfTemperature[field["defaultValue"].upper()]
+                        # the min/max range above is expressed in this unit, while the unit actually
+                        # reported by the device may differ - remember it so the bounds can be converted
+                        self._range_temperature_unit = self._attr_temperature_unit
                     elif field["fieldName"] == "autoStop":
                         pass  # TO-BE-DONE: implement as switch entity type
             elif cap["type"] == "devices.capabilities.work_mode":
@@ -222,6 +229,28 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
             self.async_write_ha_state()
         return None
 
+    def _convert_range_temperature(self, value: float) -> float:
+        """Convert a bound from the unit its capability range was declared in to the entity unit."""
+        range_unit = self._range_temperature_unit
+        unit = self.temperature_unit
+        if range_unit is None or unit is None or range_unit == unit:
+            return float(value)
+        return round(TemperatureConverter.convert(float(value), range_unit, unit))
+
+    @property
+    def min_temp(self) -> float:
+        """Return the minimum temperature, converted to the unit reported by the device."""
+        if getattr(self, "_attr_min_temp", None) is None:
+            return super().min_temp
+        return self._convert_range_temperature(self._attr_min_temp)
+
+    @property
+    def max_temp(self) -> float:
+        """Return the maximum temperature, converted to the unit reported by the device."""
+        if getattr(self, "_attr_max_temp", None) is None:
+            return super().max_temp
+        return self._convert_range_temperature(self._attr_max_temp)
+
     @property
     def temperature_unit(self) -> str:
         """Return the temperature unit of the entity."""
@@ -280,17 +309,21 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
 
     async def async_set_temperature(self, **kwargs) -> None:
         """Set new target temperature."""
+        instance = self._temperature_setting_instance or "targetTemperature"
         value = GoveeAPI_GetCachedStateValue(
             self.hass,
             self._entry_id,
             self._device_cfg.get("device"),
             "devices.capabilities.temperature_setting",
-            "targetTemperature",
+            instance,
         )
-        unit = value.get("unit", "Celsius")
+        # devices exposing only sliderTemperature have no targetTemperature state to read back,
+        # so fall back to the unit the entity itself reports rather than assuming Celsius
+        default_unit = "Fahrenheit" if self.temperature_unit == UnitOfTemperature.FAHRENHEIT else "Celsius"
+        unit = (value or {}).get("unit", default_unit)
         state_capability = {
             "type": "devices.capabilities.temperature_setting",
-            "instance": "targetTemperature",
+            "instance": instance,
             "value": {
                 "temperature": kwargs["temperature"],
                 "unit": unit,
