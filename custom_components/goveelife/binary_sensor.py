@@ -36,6 +36,7 @@ platform_device_types = [
 # Map event instance names to appropriate HA binary sensor device classes.
 _EVENT_DEVICE_CLASS_MAP: dict[str, BinarySensorDeviceClass] = {
     "waterFullEvent": BinarySensorDeviceClass.PROBLEM,
+    "lackWaterEvent": BinarySensorDeviceClass.PROBLEM,
     # Air quality monitor threshold alerts
     "co2AlarmEvent": BinarySensorDeviceClass.GAS,
     # Ice maker state events
@@ -53,9 +54,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         _LOGGER.debug("%s - async_setup_entry %s: Getting cloud devices from data store", entry.entry_id, platform)
         entry_data = hass.data[DOMAIN][entry.entry_id]
         api_devices = entry_data[CONF_DEVICES]
-    except Exception as e:
-        _LOGGER.error(
-            "%s - async_setup_entry %s: Getting cloud devices from data store failed: %s (%s.%s)",
+    except Exception as e:\n        _LOGGER.error(\n            "%s - async_setup_entry %s: Getting cloud devices from data store failed: %s (%s.%s)",
             entry.entry_id,
             platform,
             str(e),
@@ -90,9 +89,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
                         hass, entry, coordinator, device_cfg, platform=platform, cap=capability
                     )
                     entities.append(entity)
-        except Exception as e:
-            _LOGGER.error(
-                "%s - async_setup_entry %s: Setup device failed: %s (%s.%s)",
+        except Exception as e:\n            _LOGGER.error(\n                "%s - async_setup_entry %s: Setup device failed: %s (%s.%s)",
                 entry.entry_id,
                 platform,
                 str(e),
