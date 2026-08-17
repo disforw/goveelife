@@ -6,7 +6,7 @@ from typing import Final
 
 DOMAIN: Final = "goveelife"
 FUNC_OPTION_UPDATES: Final = "options_update_listener"
-SUPPORTED_PLATFORMS: Final = ["binary_sensor", "climate", "switch", "light", "fan", "sensor", "humidifier"]
+SUPPORTED_PLATFORMS: Final = ["binary_sensor", "climate", "switch", "light", "fan", "sensor", "humidifier", "select"]
 STATE_DEBUG_FILENAME: Final = "/_diagnostics.json"
 
 
