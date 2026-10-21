@@ -20,6 +20,7 @@ platform = "select"
 
 platform_device_types = [
     ".*:devices.capabilities.mode:.*",
+    ".*:devices.capabilities.dynamic_scene:snapshot",
 ]
 
 
@@ -93,7 +94,11 @@ class GoveeLifeSelect(SelectEntity, GoveeLifePlatformEntity):
         self._cap = kwargs.get("cap", None)
         instance = self._cap.get("instance", "mode")
         # Make the display name human-friendly
-        display_instance = instance.replace("hdmiSource", "HDMI Source")
+        display_instance = (
+            instance
+            .replace("hdmiSource", "HDMI Source")
+            .replace("snapshot", "Snapshot")
+        )
         self._name = f"{self._name} {display_instance}"
         self._entity_id = f"{self._entity_id}_{instance}"
         self.uniqueid = f"{self._identifier}_{self._entity_id}"
