@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.components.fan import FanEntityFeature
@@ -58,3 +58,28 @@ def test_fanspeed_mode_values_are_used_as_discrete_speeds(fixture_file, speed_co
     assert fan.preset_modes == ["Off", "FanSpeed", "Auto", "Sleep", "Nature", "Custom"]
     assert fan._ordered_named_fan_speeds == [f"Speed {speed}" for speed in range(1, speed_count + 1)]
     assert fan._attr_preset_modes_mapping_set["FanSpeed"] == {"workMode": 1, "modeValue": speed_count}
+
+
+def test_h7102_normal_mode_values_are_used_as_discrete_speeds():
+    """Issue #171: the H7102 names its speed mode "Normal", so presets were used as speeds."""
+    fan = _create_fan(_load_device_fixture("h7102_2025-01-24.json"))
+
+    assert fan._flat_work_mode is False
+    assert fan.speed_count == 8
+    assert fan._ordered_named_fan_speeds == [f"Speed {speed}" for speed in range(1, 9)]
+    assert fan.preset_modes == ["Off", "Normal", "Custom", "Auto", "Sleep", "Nature"]
+    assert fan._manual_work_mode == 1
+    assert fan._attr_preset_modes_mapping_set["Normal"] == {"workMode": 1, "modeValue": 8}
+
+
+async def test_h7102_set_percentage_sends_normal_mode_with_speed():
+    fan = _create_fan(_load_device_fixture("h7102_2025-01-24.json"))
+    fan.async_write_ha_state = MagicMock()
+
+    with (
+        patch("custom_components.goveelife.fan.GoveeAPI_GetCachedStateValue", return_value=1),
+        patch("custom_components.goveelife.fan.async_GoveeAPI_ControlDevice", AsyncMock(return_value=True)) as ctrl,
+    ):
+        await fan.async_set_percentage(100)
+
+    assert ctrl.call_args.args[3]["value"] == {"workMode": 1, "modeValue": 8}

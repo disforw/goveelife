@@ -220,15 +220,20 @@ async def async_GoveeAPI_GetDeviceState(
     try:
         if r is None:
             r = await async_GoveeAPI_POSTRequest(hass, entry_id, "device/state", json_str, return_status_code)
-            r = r["payload"]
-        if isinstance(r, int) and return_status_code:
-            return r
-        if not isinstance(r, int):
-            entry_data.setdefault(CONF_STATE, {})
-            d = device_cfg.get("device")
-            entry_data[CONF_STATE][d] = r
-            return True
-        return False
+            # A failed request returns None (API unreachable) or an HTTP status code (when
+            # return_status_code is set). Check before subscripting so a 401/429 can
+            # propagate to the coordinator instead of raising a TypeError.
+            if r is None:
+                return False
+            if isinstance(r, int):
+                return r if return_status_code else False
+            r = r.get("payload")
+            if not isinstance(r, dict):
+                _LOGGER.warning("%s - async_GoveeAPI_GetDeviceState: response contains no payload", entry_id)
+                return False
+        entry_data.setdefault(CONF_STATE, {})
+        entry_data[CONF_STATE][device_cfg.get("device")] = r
+        return True
 
     except Exception as e:
         _LOGGER.error(
