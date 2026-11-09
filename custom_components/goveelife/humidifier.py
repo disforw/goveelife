@@ -281,8 +281,47 @@ class GoveeLifeHumidifier(HumidifierEntity, GoveeLifePlatformEntity):
 
     @property
     def mode(self) -> str | None:
-        """Return current mode."""
-        return MODE_AUTO
+        """Return the current mode, derived from the cached workMode state."""
+        value = GoveeAPI_GetCachedStateValue(
+            self.hass,
+            self._entry_id,
+            self._device_cfg.get("device"),
+            "devices.capabilities.work_mode",
+            "workMode",
+        )
+        if not isinstance(value, dict) or value.get("workMode") is None:
+            return None if self._attr_available_modes else MODE_AUTO
+        current = {"workMode": value.get("workMode"), "modeValue": value.get("modeValue")}
+        for name, mapping in self._attr_preset_modes_mapping_set.items():
+            if mapping == current:
+                return name
+        # modeValue may be a live setpoint (range modes) - fall back to matching workMode only,
+        # but only when that is unambiguous (several presets can share one workMode)
+        candidates = [
+            name
+            for name, mapping in self._attr_preset_modes_mapping_set.items()
+            if mapping.get("workMode") == current["workMode"]
+        ]
+        return candidates[0] if len(candidates) == 1 else None
+
+    @property
+    def target_humidity(self) -> float | None:
+        """Return the target humidity from the humidity range capability, if present."""
+        if getattr(self, "_attr_min_humidity", None) is None:
+            return None
+        value = GoveeAPI_GetCachedStateValue(
+            self.hass,
+            self._entry_id,
+            self._device_cfg.get("device"),
+            "devices.capabilities.range",
+            "humidity",
+        )
+        if value is None or value == "":
+            return None
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
 
     async def async_turn_on(self, speed: str = None, mode: str = None, **kwargs) -> None:
         """Async: Turn entity on"""
@@ -332,11 +371,22 @@ class GoveeLifeHumidifier(HumidifierEntity, GoveeLifePlatformEntity):
                 type(e).__name__,
             )
 
-    async def async_set_mode(self, **kwargs) -> None:
+    async def async_set_mode(self, mode: str | None = None, **kwargs) -> None:
         """Set new target preset mode."""
-        preset_mode = kwargs.get("mode") or kwargs.get("preset_mode")
+        preset_mode = mode or kwargs.get("preset_mode")
         if preset_mode is None:
-            _LOGGER.warning("%s - %s: async_set_mode called with no mode kwarg: %s", self._api_id, self._identifier, kwargs)
+            _LOGGER.warning(
+                "%s - %s: async_set_mode called with no mode kwarg: %s", self._api_id, self._identifier, kwargs
+            )
+            return
+        if preset_mode not in self._attr_preset_modes_mapping_set:
+            _LOGGER.warning(
+                "%s - %s: async_set_mode: unknown mode %s (available: %s)",
+                self._api_id,
+                self._identifier,
+                preset_mode,
+                self._attr_available_modes,
+            )
             return
         state_capability = {
             "type": "devices.capabilities.work_mode",

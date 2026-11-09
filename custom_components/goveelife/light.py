@@ -40,6 +40,25 @@ _LOGGER: Final = logging.getLogger(__name__)
 platform = "light"
 platform_device_types = ["devices.types.light"]
 
+NIGHTLIGHT_TOGGLE = ("devices.capabilities.toggle", "nightlightToggle")
+# Capabilities that turn a bare nightlight on/off toggle into a dimmable/colour light
+NIGHTLIGHT_LIGHT_CAPS = {
+    ("devices.capabilities.range", "brightness"),
+    ("devices.capabilities.color_setting", "colorRgb"),
+    ("devices.capabilities.color_setting", "colorTemperatureK"),
+}
+
+
+def has_nightlight_light(device_cfg) -> bool:
+    """Return True for a non-light appliance whose nightlight exposes brightness or colour.
+
+    Humidifiers, air purifiers, ice makers etc. (e.g. H7140, H7129, H8120) ship a nightlight
+    with the same brightness/colour capabilities as a light, but under their own device
+    type, so they were only ever exposed as an on/off switch (issues #163, #149).
+    """
+    caps = {(c.get("type"), c.get("instance")) for c in device_cfg.get("capabilities", [])}
+    return NIGHTLIGHT_TOGGLE in caps and bool(caps & NIGHTLIGHT_LIGHT_CAPS)
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
     """Set up the light platform."""
@@ -63,13 +82,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
     for device_cfg in api_devices:
         try:
-            if device_cfg.get("type", STATE_UNKNOWN) not in platform_device_types:
-                continue
             d = device_cfg.get("device")
-            _LOGGER.debug("%s - async_setup_entry %s: Setup device: %s", entry.entry_id, platform, d)
-            coordinator = entry_data[CONF_COORDINATORS][d]
-            entity = GoveeLifeLight(hass, entry, coordinator, device_cfg, platform=platform)
-            entities.append(entity)
+            if device_cfg.get("type", STATE_UNKNOWN) in platform_device_types:
+                _LOGGER.debug("%s - async_setup_entry %s: Setup device: %s", entry.entry_id, platform, d)
+                coordinator = entry_data[CONF_COORDINATORS][d]
+                entities.append(GoveeLifeLight(hass, entry, coordinator, device_cfg, platform=platform))
+            elif has_nightlight_light(device_cfg):
+                _LOGGER.debug("%s - async_setup_entry %s: Setup nightlight: %s", entry.entry_id, platform, d)
+                coordinator = entry_data[CONF_COORDINATORS][d]
+                entities.append(GoveeLifeNightLight(hass, entry, coordinator, device_cfg, platform=platform))
         except Exception as e:
             _LOGGER.error(
                 "%s - async_setup_entry %s: Setup device failed: %s (%s.%s)",
@@ -103,6 +124,9 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
         self._state_mapping[0] = STATE_OFF
         self._state_mapping_set[STATE_ON] = 1
         self._state_mapping_set[STATE_OFF] = 0
+        self._power_cap_type, self._power_cap_instance = getattr(
+            self, "_power_capability", ("devices.capabilities.on_off", "powerSwitch")
+        )
         self._temperature_scale = None
         self._brightness_scale = None
         self._support_brightness = None
@@ -272,7 +296,8 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
     @property
     def color_mode(self) -> ColorMode | str | None:
         """Return the color mode of the light."""
-        if self._support_color_temp and self.color_temp_kelvin is not None:
+        if self._support_color_temp and (self.color_temp_kelvin is not None or not self._support_color):
+            # colour-temperature-only lights must report a mode listed in supported_color_modes
             return ColorMode.COLOR_TEMP
         elif self._support_color:
             return ColorMode.RGB
@@ -335,7 +360,7 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
     def state(self) -> str | None:
         """Return the current state of the entity."""
         value = GoveeAPI_GetCachedStateValue(
-            self.hass, self._entry_id, self._device_cfg.get("device"), "devices.capabilities.on_off", "powerSwitch"
+            self.hass, self._entry_id, self._device_cfg.get("device"), self._power_cap_type, self._power_cap_instance
         )
         v = self._state_mapping.get(value, STATE_UNKNOWN)
         if v == STATE_UNKNOWN:
@@ -486,8 +511,8 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
 
             if not self.is_on:
                 state_capability = {
-                    "type": "devices.capabilities.on_off",
-                    "instance": "powerSwitch",
+                    "type": self._power_cap_type,
+                    "instance": self._power_cap_instance,
                     "value": self._state_mapping_set[STATE_ON],
                 }
                 if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
@@ -511,8 +536,8 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
             _LOGGER.debug("%s - %s: async_turn_off", self._api_id, self._identifier)
             self._current_scene = None
             state_capability = {
-                "type": "devices.capabilities.on_off",
-                "instance": "powerSwitch",
+                "type": self._power_cap_type,
+                "instance": self._power_cap_instance,
                 "value": self._state_mapping_set[STATE_OFF],
             }
             if await async_GoveeAPI_ControlDevice(self.hass, self._entry_id, self._device_cfg, state_capability):
@@ -614,3 +639,29 @@ class GoveeLifeLight(LightEntity, GoveeLifePlatformEntity, RestoreEntity):
                 e.__class__.__module__,
                 type(e).__name__,
             )
+
+
+class GoveeLifeNightLight(GoveeLifeLight):
+    """Nightlight of a non-light appliance (humidifier, purifier, ...), switched via nightlightToggle."""
+
+    _power_capability = NIGHTLIGHT_TOGGLE
+
+    def _init_platform_specific(self, **kwargs):
+        """Give the nightlight its own name, entity id and unique id next to the appliance entity."""
+        self._name = f"{self._name} Nightlight"
+        self._entity_id = f"{self._entity_id}_nightlight"
+        self.uniqueid = f"{self._identifier}_{self._entity_id}"
+
+    def _platform_specific_init(self):
+        """Initialise like a light, then map the nightlightToggle on/off option values."""
+        super()._platform_specific_init()
+        for cap in self._device_cfg.get("capabilities", []):
+            if (cap.get("type"), cap.get("instance")) != NIGHTLIGHT_TOGGLE:
+                continue
+            for option in cap.get("parameters", {}).get("options", []):
+                if option.get("name") == "on":
+                    self._state_mapping[option["value"]] = STATE_ON
+                    self._state_mapping_set[STATE_ON] = option["value"]
+                elif option.get("name") == "off":
+                    self._state_mapping[option["value"]] = STATE_OFF
+                    self._state_mapping_set[STATE_OFF] = option["value"]

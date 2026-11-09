@@ -155,10 +155,11 @@ class GoveeLifeSensor(GoveeLifePlatformEntity, SensorEntity):
         _LOGGER.debug("%s - %s: state_class: property requested", self._api_id, self._identifier)
         return self._state_class
 
-    @property
-    def state(self) -> str | None:
-        """Return state via native_value (overrides GoveeLifePlatformEntity.state to let SensorEntity work correctly)."""
-        return self.native_value
+    # GoveeLifePlatformEntity.state returns a static placeholder. SensorEntity.state is
+    # what converts native_value from native_unit_of_measurement into the unit the user
+    # selected (e.g. Govee's °F into °C), so it must win the MRO lookup. Overriding
+    # `state` to return native_value directly (as v4.1.6 did) skips that conversion.
+    state = SensorEntity.state
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -166,7 +167,7 @@ class GoveeLifeSensor(GoveeLifePlatformEntity, SensorEntity):
         self.async_write_ha_state()
 
     @property
-    def native_value(self) -> str | None:
+    def native_value(self) -> float | str | None:
         """Return the current state of the entity."""
         value = GoveeAPI_GetCachedStateValue(
             self.hass,
@@ -176,4 +177,13 @@ class GoveeLifeSensor(GoveeLifePlatformEntity, SensorEntity):
             self._capability_name,
         )
         _LOGGER.debug("%s - %s: state value: %s", self._api_id, self._identifier, value)
+        if value is None or value == "":
+            return None
+        if self._attr_native_unit_of_measurement is not None or self._attr_device_class is not None:
+            # Numeric sensor: HA rejects non-numeric states, so never pass raw strings through
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                _LOGGER.debug("%s - %s: non-numeric value ignored: %s", self._api_id, self._identifier, value)
+                return None
         return value

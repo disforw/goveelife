@@ -24,6 +24,8 @@ from .utils import GoveeAPI_GetCachedStateValue, async_GoveeAPI_ControlDevice
 _LOGGER = logging.getLogger(__name__)
 PLATFORM = "fan"
 PLATFORM_DEVICE_TYPES = ["devices.types.air_purifier", "devices.types.fan"]
+# workMode names that are known to carry the discrete fan speeds in their modeValue
+SPEED_MODE_NAMES = ("manual", "gearmode", "fanspeed")
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
@@ -115,15 +117,17 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
         any_named_modevalue = False  # True if any modeValue option carries sub-options with names
         manual_work_mode = None
         work_mode_cap = None
+        self._speed_mode_name = None
 
         for cap in capabilities:
             if cap["type"] == "devices.capabilities.work_mode":
                 work_mode_cap = cap
+                self._speed_mode_name = self._detect_speed_mode_name(cap)
                 for capFieldWork in cap["parameters"]["fields"]:
                     if capFieldWork["fieldName"] == "workMode":
                         for workOption in capFieldWork.get("options", []):
                             work_mode_options.append({"name": workOption["name"], "value": workOption["value"]})
-                            if workOption["name"].lower() in ["manual", "gearmode", "fanspeed"]:
+                            if self._is_speed_mode_name(workOption["name"]):
                                 manual_work_mode = workOption["value"]
                                 self._manual_preset_name = workOption["name"]
                     elif capFieldWork["fieldName"] == "modeValue":
@@ -137,7 +141,7 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                                     gear_name = gearOption.get("name") or f"Speed {gearOption['value']}"
                                     gear_modes.append({"name": gear_name, "value": gearOption["value"]})
                             elif valueOption.get("options"):
-                                if valueOption["name"].lower() in ["manual", "gearmode", "fanspeed"]:
+                                if self._is_speed_mode_name(valueOption["name"]):
                                     for subOpt in valueOption["options"]:
                                         sub_name = subOpt.get("name") or f"Speed {subOpt['value']}"
                                         gear_modes.append({"name": sub_name, "value": subOpt["value"]})
@@ -149,7 +153,9 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                                     # Check if this is the manual work mode by value lookup
                                     is_manual_mode = valueOption.get("value", 0) == manual_work_mode
                                     # Also check by name match (for cases where valueOption doesn't have a value field)
-                                    name_match = value_option_name_to_check and value_option_name_to_check.lower() in ["manual", "gearmode", "fanspeed"]
+                                    name_match = value_option_name_to_check and self._is_speed_mode_name(
+                                        value_option_name_to_check
+                                    )
 
                                     if is_manual_mode or name_match:
                                         # Another manual-mode sub-option block with options
@@ -265,11 +271,12 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                             elif valueOption["name"] != "gearMode":
                                 # Check if this modeValue option name corresponds to the manual work mode name
                                 value_option_is_manual_mode = (
-                                    work_mode_value_to_name.get(valueOption.get("value", 0)) == work_mode_value_to_name.get(manual_work_mode)
+                                    work_mode_value_to_name.get(valueOption.get("value", 0))
+                                    == work_mode_value_to_name.get(manual_work_mode)
                                     and manual_work_mode is not None
                                 )
                                 # Also check direct name match with known manual mode names
-                                name_match = valueOption["name"].lower() in ["manual", "gearmode", "fanspeed"]
+                                name_match = self._is_speed_mode_name(valueOption["name"])
 
                                 if value_option_is_manual_mode or name_match:
                                     # This is the manual work mode (like FanSpeed for H7106)
@@ -333,6 +340,40 @@ class GoveeLifeFan(FanEntity, GoveeLifePlatformEntity):
                     )
                     self._attr_percentage_step = 100 / len(self._ordered_named_fan_speeds)
                     _LOGGER.debug("%s - %s: Speed mapping: %s", self._api_id, self._identifier, self._speed_mapping)
+
+    @staticmethod
+    def _detect_speed_mode_name(work_mode_cap) -> str | None:
+        """Find the workMode whose modeValue lists the discrete speeds when it has no well-known name.
+
+        Most devices call the manual speed mode gearMode/Manual/FanSpeed, but some (e.g. the
+        H7102 tower fan) call it "Normal". Without this, such devices were treated as
+        "flat workMode" devices and the speed slider cycled through presets (issue #171).
+        """
+        fields = work_mode_cap.get("parameters", {}).get("fields", [])
+        work_mode_names = [
+            opt.get("name", "")
+            for field in fields
+            if field.get("fieldName") == "workMode"
+            for opt in field.get("options", [])
+        ]
+        if any(name.lower() in SPEED_MODE_NAMES for name in work_mode_names):
+            return None
+        best_name, best_count = None, 1
+        for field in fields:
+            if field.get("fieldName") != "modeValue":
+                continue
+            for opt in field.get("options", []):
+                name = opt.get("name")
+                count = len(opt.get("options") or [])
+                if name in work_mode_names and count > best_count:
+                    best_name, best_count = name, count
+        return best_name
+
+    def _is_speed_mode_name(self, name: str | None) -> bool:
+        """Return True if the workMode/modeValue name is the one carrying discrete fan speeds."""
+        if not name:
+            return False
+        return name.lower() in SPEED_MODE_NAMES or name == getattr(self, "_speed_mode_name", None)
 
     @property
     def speed_count(self) -> int | None:

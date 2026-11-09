@@ -30,11 +30,19 @@ platform_device_types = [
     "devices.types.light:.*toggle:sideLightToggle",
     "devices.types.light:.*toggle:bottomLightToggle",
     "devices.types.ice_maker:.*on_off:.*",
+    # nightlightToggle is excluded: ice maker nightlights are exposed as a light entity
+    "devices.types.ice_maker:.*toggle:(?!nightlightToggle$).*",
     "devices.types.aroma_diffuser:.*on_off:.*",
     "devices.types.humidifier:.*on_off:.*",
     "devices.types.humidifier:.*toggle:nightlightToggle",
     "devices.types.kettle:.*on_off:.*",
 ]
+
+
+def _has_on_off_options(capability) -> bool:
+    """Return True if the capability's options define both an 'on' and an 'off' value."""
+    names = {option.get("name") for option in capability.get("parameters", {}).get("options", [])}
+    return {"on", "off"} <= names
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
@@ -64,6 +72,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             for capability in device_cfg.get("capabilities", []):
                 capability_key = f"{device_cfg.get('type', STATE_UNKNOWN)}:{capability.get('type', STATE_UNKNOWN)}:{capability.get('instance', STATE_UNKNOWN)}"
                 if any(re.match(platform_match, capability_key) for platform_match in platform_device_types):
+                    if not _has_on_off_options(capability):
+                        # e.g. the ice maker's iceMakingToggle (iceMaking/Clean) is not an on/off switch
+                        _LOGGER.debug(
+                            "%s - async_setup_entry %s: Skipping non on/off capability: %s",
+                            entry.entry_id,
+                            platform,
+                            capability_key,
+                        )
+                        continue
                     _LOGGER.debug(
                         "%s - async_setup_entry %s: Setup capability: %s|%s|%s",
                         entry.entry_id,
