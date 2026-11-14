@@ -382,7 +382,21 @@ def GoveeAPI_GetCachedStateValue(hass: HomeAssistant, entry_id: str, device_id, 
         for cap in capabilities:
             if cap["type"] == value_type and cap["instance"] == value_instance:
                 cap_state = cap.get("state", None)
-                if cap_state is not None:
+                if cap_state is None:
+                    continue
+                if isinstance(cap_state, list):
+                    # devices.capabilities.event capabilities (e.g. lackWaterEvent,
+                    # waterFullEvent, co2AlarmEvent, iceBucketFullEvent) report their
+                    # state as a list of currently active event entries, e.g.
+                    # [{"name": "lack", "value": 1, "message": "Lack of Water"}],
+                    # rather than a single dict like other capability types. An empty
+                    # list (or a list with no truthy value) means no event is active.
+                    value = 0
+                    for entry in cap_state:
+                        if isinstance(entry, dict) and entry.get("value"):
+                            value = entry.get("value")
+                            break
+                else:
                     value = cap_state.get("value", cap_state.get(value_instance, None))
         return value
     except Exception as e:
