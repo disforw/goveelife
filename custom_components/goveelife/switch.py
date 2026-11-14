@@ -36,6 +36,8 @@ platform_device_types = [
     "devices.types.humidifier:.*on_off:.*",
     "devices.types.humidifier:.*toggle:nightlightToggle",
     "devices.types.kettle:.*on_off:.*",
+    # H5901 water timer and similar valve/timer devices: expose on/off as a switch
+    "devices.types.timer:.*on_off:.*",
 ]
 
 
