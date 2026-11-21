@@ -290,15 +290,17 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
             if mode_value is not None and mode_value != 0:
                 return float(mode_value)
 
-        # If no preset mode temperature, try to get it from the slider
+        # If no preset mode temperature, read the temperature_setting instance the device exposes:
+        # heaters such as the H7130 use targetTemperature, kettles such as the H7170 use sliderTemperature.
+        # Both report the setpoint under the "targetTemperature" key.
         value = GoveeAPI_GetCachedStateValue(
             self.hass,
             self._entry_id,
             self._device_cfg.get("device"),
             "devices.capabilities.temperature_setting",
-            "sliderTemperature",
+            self._temperature_setting_instance or "sliderTemperature",
         )
-        _LOGGER.debug("%s - %s: target_temperature: slider value: %s", self._api_id, self._identifier, value)
+        _LOGGER.debug("%s - %s: target_temperature: setting value: %s", self._api_id, self._identifier, value)
         if value is None:
             return None
         temperature = value.get("targetTemperature")

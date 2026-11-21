@@ -48,6 +48,26 @@ def _create_climate(device_cfg):
 
 
 @pytest.mark.parametrize(
+    ("fixture_file", "instance", "state", "expected"),
+    [
+        # heater: the setpoint lives under the targetTemperature instance
+        ("h7130_2024-07-10.json", "targetTemperature", {"unit": "Fahrenheit", "targetTemperature": 66}, 66),
+        # kettle: the setpoint lives under the sliderTemperature instance
+        ("h7170_2025-05-31.json", "sliderTemperature", {"unit": "Fahrenheit", "targetTemperature": 200}, 200),
+    ],
+)
+def test_target_temperature_reads_the_instance_the_device_exposes(fixture_file, instance, state, expected):
+    """The setpoint must be read from the device's own temperature_setting instance."""
+    device_cfg = _load_device_fixture(fixture_file)
+
+    with patch("custom_components.goveelife.climate.GoveeAPI_GetCachedStateValue") as cached:
+        cached.side_effect = lambda hass, entry_id, device, cap_type, inst: state if inst == instance else None
+        climate = _create_climate(device_cfg)
+
+        assert climate.target_temperature == expected
+
+
+@pytest.mark.parametrize(
     ("reported_unit", "expected_unit", "expected_min", "expected_max"),
     [
         ("Fahrenheit", UnitOfTemperature.FAHRENHEIT, 104, 212),
