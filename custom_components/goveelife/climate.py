@@ -130,10 +130,9 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
                         self._attr_min_temp = field["range"]["min"]
                         self._attr_target_temperature_step = field["range"]["precision"]
                     elif field["fieldName"] == "unit":
-                        self._attr_temperature_unit = UnitOfTemperature[field["defaultValue"].upper()]
                         # the min/max range above is expressed in this unit, while the unit actually
                         # reported by the device may differ - remember it so the bounds can be converted
-                        self._range_temperature_unit = self._attr_temperature_unit
+                        self._range_temperature_unit = UnitOfTemperature[field["defaultValue"].upper()]
                     elif field["fieldName"] == "autoStop":
                         pass  # TO-BE-DONE: implement as switch entity type
             elif cap["type"] == "devices.capabilities.work_mode":
@@ -160,7 +159,7 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
                                 "modeValue": mode_value,
                             }
             elif cap["type"] == "devices.capabilities.property" and cap["instance"] == "sensorTemperature":
-                pass  # do nothing as this is handled within 'current_temperature' property
+                pass  # do nothing as this is handled within 'native_current_temperature' property
             else:
                 _LOGGER.debug(
                     "%s - %s: _init_platform_specific: cap unhandled: %s", self._api_id, self._identifier, cap
@@ -232,7 +231,7 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
     def _convert_range_temperature(self, value: float) -> float:
         """Convert a bound from the unit its capability range was declared in to the entity unit."""
         range_unit = self._range_temperature_unit
-        unit = self.temperature_unit
+        unit = self.native_temperature_unit
         if range_unit is None or unit is None or range_unit == unit:
             return float(value)
         return round(TemperatureConverter.convert(float(value), range_unit, unit))
@@ -252,7 +251,7 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
         return self._convert_range_temperature(self._attr_max_temp)
 
     @property
-    def temperature_unit(self) -> str:
+    def native_temperature_unit(self) -> str:
         """Return the temperature unit of the entity."""
         value = GoveeAPI_GetCachedStateValue(
             self.hass,
@@ -277,7 +276,7 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
         return UnitOfTemperature.CELSIUS
 
     @property
-    def target_temperature(self) -> float | None:
+    def native_target_temperature(self) -> float | None:
         """Return the target temperature of the entity."""
         # First try to get the temperature from the current preset mode
         preset_mode = self.preset_mode
@@ -319,7 +318,7 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
         )
         # devices exposing only sliderTemperature have no targetTemperature state to read back,
         # so fall back to the unit the entity itself reports rather than assuming Celsius
-        default_unit = "Fahrenheit" if self.temperature_unit == UnitOfTemperature.FAHRENHEIT else "Celsius"
+        default_unit = "Fahrenheit" if self.native_temperature_unit == UnitOfTemperature.FAHRENHEIT else "Celsius"
         unit = (value or {}).get("unit", default_unit)
         state_capability = {
             "type": "devices.capabilities.temperature_setting",
@@ -334,7 +333,7 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
         return None
 
     @property
-    def current_temperature(self) -> float | None:
+    def native_current_temperature(self) -> float | None:
         """Return the current temperature of the entity."""
         value = GoveeAPI_GetCachedStateValue(
             self.hass,
@@ -345,7 +344,12 @@ class GoveeLifeClimate(ClimateEntity, GoveeLifePlatformEntity):
         )
         if value is None or value == "":
             return None
-        if self.temperature_unit == UnitOfTemperature.CELSIUS:
+        if self.native_temperature_unit == UnitOfTemperature.CELSIUS:
             # value seems to be always Fahrenheit - calculate to °C if necessary
             value = (float(value) - 32) * 5 / 9
         return float(value)
+
+    # Home Assistant before 2026.11 reads the old names; drop these once 2026.11 is the minimum version
+    temperature_unit = native_temperature_unit
+    target_temperature = native_target_temperature
+    current_temperature = native_current_temperature
