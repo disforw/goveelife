@@ -13,6 +13,7 @@ from homeassistant.const import (
     CONF_TIMEOUT,
     UnitOfTemperature,
 )
+from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
 
 from custom_components.goveelife.climate import GoveeLifeClimate
 from custom_components.goveelife.const import CONF_COORDINATORS, DOMAIN
@@ -61,7 +62,7 @@ def test_kettle_bounds_follow_reported_unit(reported_unit, expected_unit, expect
         cached.return_value = {"targetTemperature": 212, "unit": reported_unit}
         climate = _create_climate(device_cfg)
 
-        assert climate.temperature_unit == expected_unit
+        assert climate.native_temperature_unit == expected_unit
         assert climate.min_temp == expected_min
         assert climate.max_temp == expected_max
 
@@ -95,3 +96,25 @@ async def test_set_temperature_uses_the_instance_the_device_exposes(cached_state
     sent = control.await_args.args[3]
     assert sent["instance"] == "sliderTemperature"
     assert sent["value"] == {"temperature": 200, "unit": expected_unit}
+
+
+def test_heater_attributes_rendered_in_fahrenheit():
+    """The H7130 declares 5-30 Celsius but reports Fahrenheit; HA must show the same values as before."""
+    device_cfg = _load_device_fixture("h7130_2024-07-10.json")
+    cached_states = {
+        "targetTemperature": {"temperature": 70, "unit": "Fahrenheit"},
+        "sensorTemperature": 68,
+    }
+
+    with patch("custom_components.goveelife.climate.GoveeAPI_GetCachedStateValue") as cached:
+        cached.side_effect = lambda hass, entry_id, device, cap_type, instance: cached_states.get(instance)
+        climate = _create_climate(device_cfg)
+        climate.hass.config.units = US_CUSTOMARY_SYSTEM
+
+        assert climate.native_temperature_unit == UnitOfTemperature.FAHRENHEIT
+        attributes = {**climate.capability_attributes, **climate.state_attributes}
+
+    assert attributes["min_temp"] == 41
+    assert attributes["max_temp"] == 86
+    assert attributes["target_temp_step"] == 1
+    assert attributes["current_temperature"] == 68
